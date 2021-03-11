@@ -14,7 +14,7 @@ class CccpClassifier(BasePUClassifier):
 
     c_estimate: float
 
-    def __init__(self, tol: float = 1e-4, max_iter: int = 50, cccp_max_iter: int = 10, cg_max_iter: int = 100,
+    def __init__(self, tol: float = 1e-4, max_iter: int = 100, cccp_max_iter: int = 20, cg_max_iter: int = 100,
                  verbosity: int = 0):
         self.tol = tol
         self.max_iter = max_iter

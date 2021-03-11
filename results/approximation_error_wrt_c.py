@@ -47,39 +47,29 @@ if __name__ == '__main__':
         'CCCP': CccpClassifier(verbosity=1)
     }
 
-    result_dfs = []
+    total_runs = 10
     c_values = np.arange(0.1, 1, 0.1)
-    for c in c_values:
-        total_runs = 10
 
-        def run_test(run_number):
-            s = create_s(y, c)
-            X_train, X_test, y_train, y_test, s_train, s_test = preprocess(X, y, s, test_size=0.2)
+    def run_test(c, run_number):
+        s = create_s(y, c)
+        X_train, X_test, y_train, y_test, s_train, s_test = preprocess(X, y, s, test_size=0.2)
 
-            oracle_pred = oracle_prediction(X_train, y_train, X_test)
+        oracle_pred = oracle_prediction(X_train, y_train, X_test)
 
-            dfs = []
-            for name in classifiers:
-                print(f'--- {name}: c = {c}, run {run_number + 1}/{total_runs} ---')
-                df = calculate_metrics(classifiers[name], X_train, s_train, X_test, y_test, c, oracle_pred)
-                df = df.assign(Method=name, c=c, RunNumber=run_number)
-                dfs.append(df)
-            return pd.concat(dfs)
+        dfs = []
+        for name in classifiers:
+            print(f'--- {name}: c = {c}, run {run_number + 1}/{total_runs} ---')
+            df = calculate_metrics(classifiers[name], X_train, s_train, X_test, y_test, c, oracle_pred)
+            df = df.assign(Method=name, c=c, RunNumber=run_number)
+            dfs.append(df)
+        return pd.concat(dfs)
 
-        num_cores = multiprocessing.cpu_count()
-        result_dfs = Parallel(n_jobs=num_cores)(delayed(run_test)(i) for i in range(total_runs))
-
-        # for run_number in range(10):
-        #     s = create_s(y, c)
-        #     X_train, X_test, y_train, y_test, s_train, s_test = preprocess(X, y, s, test_size=0.2)
-        #
-        #     oracle_pred = oracle_prediction(X_train, y_train, X_test)
-        #
-        #     for name in classifiers:
-        #         print(f'--- {name}: c = {c} ---')
-        #         df = calculate_metrics(classifiers[name], X_train, s_train, X_test, y_test, c)
-        #         df = df.assign(Method=name, c=c, RunNumber=run_number)
-        #         result_dfs.append(df)
+    num_cores = multiprocessing.cpu_count()
+    result_dfs = Parallel(n_jobs=num_cores)(delayed(run_test)(c, run_number)
+                                            for c, run_number in zip(
+                                                np.repeat(c_values, total_runs),
+                                                np.tile(range(total_runs), len(c_values))
+                                            ))
 
     metrics_df = pd.concat(result_dfs)
     mean_metrics_df = metrics_df.groupby(['Method', 'c', 'Metric'])\
@@ -106,5 +96,3 @@ if __name__ == '__main__':
         plt.ylabel(metric)
         plt.savefig(f'{dataset_name} - {metric}.png', dpi=150, bbox_inches='tight')
         plt.show()
-
-
