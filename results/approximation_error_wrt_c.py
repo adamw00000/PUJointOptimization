@@ -2,7 +2,9 @@ import datasets
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import multiprocessing
 
+from joblib import Parallel, delayed
 from data_preprocessing import create_s, preprocess
 from optimization import CccpClassifier, JointClassifier, OracleClassifier
 from optimization.metrics import approximation_error, c_error, auc
@@ -23,7 +25,7 @@ def pu_prediction(clf, X_train, s_train, X_test):
     return y_proba, clf.c_estimate
 
 
-def calculate_metrics(clf, X_train, s_train, X_test, y_test, c):
+def calculate_metrics(clf, X_train, s_train, X_test, y_test, c, oracle_pred):
     y_pred, c_estimate = pu_prediction(clf, X_train, s_train, X_test)
 
     approx_err = approximation_error(y_pred, oracle_pred)
@@ -48,19 +50,36 @@ if __name__ == '__main__':
     result_dfs = []
     c_values = np.arange(0.1, 1, 0.1)
     for c in c_values:
-        errors = {name: [] for name in classifiers}
+        total_runs = 10
 
-        for run_number in range(10):
+        def run_test(run_number):
             s = create_s(y, c)
             X_train, X_test, y_train, y_test, s_train, s_test = preprocess(X, y, s, test_size=0.2)
 
             oracle_pred = oracle_prediction(X_train, y_train, X_test)
 
+            dfs = []
             for name in classifiers:
-                print(f'--- {name}: c = {c} ---')
-                df = calculate_metrics(classifiers[name], X_train, s_train, X_test, y_test, c)
+                print(f'--- {name}: c = {c}, run {run_number + 1}/{total_runs} ---')
+                df = calculate_metrics(classifiers[name], X_train, s_train, X_test, y_test, c, oracle_pred)
                 df = df.assign(Method=name, c=c, RunNumber=run_number)
-                result_dfs.append(df)
+                dfs.append(df)
+            return pd.concat(dfs)
+
+        num_cores = multiprocessing.cpu_count()
+        result_dfs = Parallel(n_jobs=num_cores)(delayed(run_test)(i) for i in range(total_runs))
+
+        # for run_number in range(10):
+        #     s = create_s(y, c)
+        #     X_train, X_test, y_train, y_test, s_train, s_test = preprocess(X, y, s, test_size=0.2)
+        #
+        #     oracle_pred = oracle_prediction(X_train, y_train, X_test)
+        #
+        #     for name in classifiers:
+        #         print(f'--- {name}: c = {c} ---')
+        #         df = calculate_metrics(classifiers[name], X_train, s_train, X_test, y_test, c)
+        #         df = df.assign(Method=name, c=c, RunNumber=run_number)
+        #         result_dfs.append(df)
 
     metrics_df = pd.concat(result_dfs)
     mean_metrics_df = metrics_df.groupby(['Method', 'c', 'Metric'])\

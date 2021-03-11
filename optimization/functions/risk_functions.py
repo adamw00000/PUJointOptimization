@@ -21,7 +21,10 @@ def oracle_risk(b, X, y):
     # with warnings.catch_warnings():
     #     warnings.simplefilter("ignore")
 
-    log_likelihood = np.sum(y * np.log(probability) + (1 - y) * np.log(1 - probability))
+    # log_likelihood = np.sum(y * np.log(probability) + (1 - y) * np.log(1 - probability))
+
+    xb = np.matmul(X, b)
+    log_likelihood = np.sum(y * (xb - np.log(1 + np.exp(xb))) + (1 - y) * -np.log(1 + np.exp(xb)))
     return -log_likelihood / n
 
 
@@ -63,10 +66,13 @@ def joint_risk_derivative(params, X, s):
     # import warnings
     # with warnings.catch_warnings():
     #     warnings.simplefilter("ignore")
+
     multiplier = - ((s - c) * exb + s) / ((1 + exb) * ((c - 1) * exb - 1))
+    # multiplier = - ((s - c) + s / exb) / ((1 + 1 / exb) * ((c - 1) * exb - 1))
     partial_res = np.sum(X * multiplier.reshape(-1, 1), axis=0)
 
     derivative_wrt_c = np.sum((c * exb - s * exb - s) / (c * (c * exb - exb - 1)))
+    # derivative_wrt_c = np.sum((c - s - s / exb) / (c * (c - 1 - 1 / exb)))
     partial_res = np.append(partial_res, derivative_wrt_c)
 
     return -partial_res / n
@@ -123,5 +129,6 @@ def cccp_risk_derivative_wrt_c(c, X, s, b):
 
     exb = np.exp(np.matmul(X, b))
     derivative_wrt_c = np.sum((c * exb - s * exb - s) / (c * (c * exb - exb - 1)))
+    # derivative_wrt_c = np.sum((c - s - s / exb) / (c * (c - 1 - 1 / exb)))
 
     return -derivative_wrt_c / n
