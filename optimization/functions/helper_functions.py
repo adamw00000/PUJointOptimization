@@ -2,7 +2,7 @@ import numpy as np
 
 
 def sigma(s):
-    return np.where(s < 0, np.exp(s) / (1 + np.exp(s)), 1 / (1 + np.exp(-s)))
+    return 1 / (1 + np.exp(-s))
 
 
 def predict_proba(X, parameters):
