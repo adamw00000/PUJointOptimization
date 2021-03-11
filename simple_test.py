@@ -97,7 +97,7 @@ import numpy as np
 from optimization import DccpClassifier
 from optimization.functions import oracle_risk, accuracy
 
-clf = DccpClassifier(c=c)
+clf = DccpClassifier(c=c, tau=1)
 clf.fit(X_train, s_train)
 
 y_proba = clf.predict_proba(X_test)
