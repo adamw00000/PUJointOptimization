@@ -1,9 +1,11 @@
 import numpy as np
 
+from abc import ABC, abstractmethod
 from optimization.functions import predict_proba
 
 
-class BasePUClassifier:
+class BasePUClassifier(ABC):
+    c: float
     params: np.array
 
     def set_params(self, params: np.array) -> None:
@@ -12,6 +14,7 @@ class BasePUClassifier:
     def get_params(self) -> np.array:
         return self.params
 
+    @abstractmethod
     def fit(self, X, y):
         pass
 

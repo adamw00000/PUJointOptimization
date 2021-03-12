@@ -1,12 +1,13 @@
 import datasets
+import multiprocessing
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import multiprocessing
+import seaborn as sns
 
 from joblib import Parallel, delayed
 from data_preprocessing import create_s, preprocess
-from optimization import CccpClassifier, JointClassifier, OracleClassifier
+from optimization import CccpClassifier, JointClassifier, OracleClassifier, DccpClassifier
 from optimization.metrics import approximation_error, c_error, auc
 
 
@@ -37,50 +38,31 @@ def calculate_metrics(clf, X_train, s_train, X_test, y_test, c, oracle_pred):
         'Value': [approx_err, c_err, auc_score]
     })
 
+def run_test(c, run_number):
+    s = create_s(y, c)
+    X_train, X_test, y_train, y_test, s_train, s_test = preprocess(X, y, s, test_size=0.2)
 
-if __name__ == '__main__':
-    dataset_name = 'spambase'
-    X, y = datasets.load_spambase()
+    oracle_pred = oracle_prediction(X_train, y_train, X_test)
 
-    classifiers = {
-        'Joint': JointClassifier(),
-        'CCCP': CccpClassifier(verbosity=1)
-    }
+    dfs = []
+    for name in classifiers:
+        print(f'--- {name}: c = {c}, run {run_number + 1}/{total_runs} ---')
+        df = calculate_metrics(classifiers[name], X_train, s_train, X_test, y_test, c, oracle_pred)
+        df = df.assign(Method=name, c=c, RunNumber=run_number)
+        dfs.append(df)
+    return pd.concat(dfs)
 
-    total_runs = 10
-    c_values = np.arange(0.1, 1, 0.1)
 
-    def run_test(c, run_number):
-        s = create_s(y, c)
-        X_train, X_test, y_train, y_test, s_train, s_test = preprocess(X, y, s, test_size=0.2)
-
-        oracle_pred = oracle_prediction(X_train, y_train, X_test)
-
-        dfs = []
-        for name in classifiers:
-            print(f'--- {name}: c = {c}, run {run_number + 1}/{total_runs} ---')
-            df = calculate_metrics(classifiers[name], X_train, s_train, X_test, y_test, c, oracle_pred)
-            df = df.assign(Method=name, c=c, RunNumber=run_number)
-            dfs.append(df)
-        return pd.concat(dfs)
-
-    num_cores = multiprocessing.cpu_count()
-    result_dfs = Parallel(n_jobs=num_cores)(delayed(run_test)(c, run_number)
-                                            for c, run_number in zip(
-                                                np.repeat(c_values, total_runs),
-                                                np.tile(range(total_runs), len(c_values))
-                                            ))
-
-    metrics_df = pd.concat(result_dfs)
-    mean_metrics_df = metrics_df.groupby(['Method', 'c', 'Metric'])\
-        .Value\
-        .mean()\
+def plot_metrics(metrics_df):
+    mean_metrics_df = metrics_df.groupby(['Method', 'c', 'Metric']) \
+        .Value \
+        .mean() \
         .reset_index(drop=False)
-
     split_metric_dict = dict(tuple(mean_metrics_df.groupby('Metric')))
     for metric in split_metric_dict:
-        fig = plt.figure()
+        plt.figure()
         ax = plt.gca()
+        sns.set_theme()
 
         metric_df = split_metric_dict[metric]
         split_method_dict = dict(tuple(metric_df.groupby('Method')))
@@ -94,5 +76,30 @@ if __name__ == '__main__':
         plt.legend([name for name in split_method_dict])
         plt.xlabel(r'Label frequency $c$')
         plt.ylabel(metric)
+        plt.title(f'{dataset_name} - {metric}')
         plt.savefig(f'{dataset_name} - {metric}.png', dpi=150, bbox_inches='tight')
         plt.show()
+
+
+if __name__ == '__main__':
+    dataset_name = 'spambase'
+    X, y = datasets.load_spambase()
+
+    classifiers = {
+        'Joint': JointClassifier(),
+        'CCCP': CccpClassifier(verbosity=1),
+        # 'DCCP': DccpClassifier(verbosity=1, dccp_max_iter=20),
+    }
+
+    total_runs = 10
+    c_values = np.arange(0.1, 1, 0.1)
+
+    num_cores = multiprocessing.cpu_count()
+    result_dfs = Parallel(n_jobs=num_cores)(delayed(run_test)(c, run_number)
+                                            for c, run_number in zip(
+                                                np.repeat(c_values, total_runs),
+                                                np.tile(range(total_runs), len(c_values))
+                                            ))
+
+    metrics_df = pd.concat(result_dfs)
+    plot_metrics(metrics_df)
