@@ -2,7 +2,17 @@ import numpy as np
 
 
 def sigma(s):
-    return 1 / (1 + np.exp(-s))
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+
+        result = np.where(
+            s > 0,
+            1 / (1 + np.exp(-s)),
+            np.exp(s) / (np.exp(s) + 1)
+        )
+
+        return result
 
 
 def predict_proba(X, parameters):

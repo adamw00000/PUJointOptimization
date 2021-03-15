@@ -42,4 +42,3 @@ class CccpClassifier(SplitOptimizationPUClassifier):
                 break
             b_estimate = new_b_estimate
         return b_estimate
-

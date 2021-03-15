@@ -6,12 +6,10 @@ c = 0.1
 X, y = datasets.load_spambase()
 s = create_s(y, c)
 
-# %%
 from data_preprocessing import preprocess
 
 X_train, X_test, y_train, y_test, s_train, s_test = preprocess(X, y, s, test_size=0.2)
 
-# %%
 from optimization import OracleClassifier
 from optimization.functions import oracle_risk, accuracy
 

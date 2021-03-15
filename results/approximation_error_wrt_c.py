@@ -130,9 +130,7 @@ if __name__ == '__main__':
     }
 
     total_runs = 10
-    # total_runs = 1
     c_values = np.arange(0.1, 1, 0.1)
-    # c_values = np.arange(0.5, 0.8, 0.1)
 
     num_cores = multiprocessing.cpu_count()
     result_dfs = Parallel(n_jobs=num_cores)(delayed(run_test)(c, run_number)
