@@ -42,27 +42,33 @@ class SplitOptimizationPUClassifier(BasePUClassifier):
 
         return res.x[0]
 
-    def fit(self, X, s) -> None:
-        b_estimate = np.random.random(X.shape[1] + 1) / 100
-        c_estimate = 0.5
+    def fit(self, X, s, c: float = None):
+        # b_estimate = np.random.random(X.shape[1] + 1) / 100
+        b_estimate = np.zeros(X.shape[1] + 1)
 
-        if self.verbosity > 1:
-            print('Initial b value:', b_estimate)
-            print('Initial c value:', c_estimate)
+        if c is None:
+            c_estimate = 0.5
 
-        for i in range(self.max_iter):
-            if self.verbosity > 0:
-                print('Step:', f'{i + 1}/{self.max_iter}')
+            if self.verbosity > 1:
+                print('Initial b value:', b_estimate)
+                print('Initial c value:', c_estimate)
 
-            new_c_estimate = self._minimize_wrt_c(X, s, b_estimate, c_estimate)
-
-            if i > 0 and np.abs(new_c_estimate - c_estimate) < self.tol:
+            for i in range(self.max_iter):
                 if self.verbosity > 0:
-                    print('Procedure converged, stopping...')
-                break
+                    print('Step:', f'{i + 1}/{self.max_iter}')
 
-            c_estimate = new_c_estimate
-            b_estimate = self._minimize_wrt_b(X, s, c_estimate, b_estimate)
+                new_c_estimate = self._minimize_wrt_c(X, s, b_estimate, c_estimate)
 
-        self.params = b_estimate
-        self.c_estimate = c_estimate
+                if i > 0 and np.abs(new_c_estimate - c_estimate) < self.tol:
+                    if self.verbosity > 0:
+                        print('Procedure converged, stopping...')
+                    break
+
+                c_estimate = new_c_estimate
+                b_estimate = self._minimize_wrt_b(X, s, c_estimate, b_estimate)
+
+            self.params = b_estimate
+            self.c_estimate = c_estimate
+        else:
+            self.params = self._minimize_wrt_b(X, s, c, b_estimate)
+            self.c_estimate = c

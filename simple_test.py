@@ -9,7 +9,7 @@ s = create_s(y, c)
 # %%
 from data_preprocessing import preprocess
 
-X_train, X_test, y_train, y_test, s_train, s_test = preprocess(X, y, s, test_size = 0.2)
+X_train, X_test, y_train, y_test, s_train, s_test = preprocess(X, y, s, test_size=0.2)
 
 # %%
 from optimization import OracleClassifier
@@ -34,8 +34,8 @@ import numpy as np
 from optimization import NaiveClassifier
 from optimization.functions import oracle_risk, accuracy
 
-clf = NaiveClassifier(c=c)
-clf.fit(X_train, s_train)
+clf = NaiveClassifier()
+clf.fit(X_train, s_train, c)
 
 y_proba = clf.predict_proba(X_test)
 y_pred = clf.predict(X_test)
@@ -77,7 +77,7 @@ import numpy as np
 from optimization import CccpClassifier
 from optimization.functions import oracle_risk, accuracy
 
-clf = CccpClassifier()
+clf = CccpClassifier(verbosity=1)
 clf.fit(X_train, s_train)
 
 y_proba = clf.predict_proba(X_test)
@@ -97,7 +97,7 @@ import numpy as np
 from optimization import DccpClassifier
 from optimization.functions import oracle_risk, accuracy
 
-clf = DccpClassifier(c=c, tau=1)
+clf = DccpClassifier(tau=1)
 clf.fit(X_train, s_train)
 
 y_proba = clf.predict_proba(X_test)

@@ -2,10 +2,10 @@ import numpy as np
 import scipy.optimize
 
 from optimization.functions import oracle_risk, oracle_risk_derivative
-from optimization.__base_pu_classifier import BasePUClassifier
+from optimization.__base_classifier import BaseClassifier
 
 
-class OracleClassifier(BasePUClassifier):
+class OracleClassifier(BaseClassifier):
     def fit(self, X, y):
         b_init = np.random.random(X.shape[1] + 1) / 100
 

@@ -8,11 +8,9 @@ from optimization.functions import oracle_risk, oracle_risk_derivative, predict_
 class NaiveClassifier(BasePUClassifier):
     c: float
 
-    def __init__(self, c: float) -> None:
-        self.c = c
-
-    def fit(self, X, s):
-        b_init = np.random.random(X.shape[1] + 1) / 100
+    def fit(self, X, s, c: float):
+        # b_init = np.random.random(X.shape[1] + 1) / 100
+        b_init = np.zeros(X.shape[1] + 1)
 
         res = scipy.optimize.minimize(
             fun=oracle_risk,
@@ -23,6 +21,7 @@ class NaiveClassifier(BasePUClassifier):
         )
 
         self.params = res.x
+        self.c = c
 
         return self
 

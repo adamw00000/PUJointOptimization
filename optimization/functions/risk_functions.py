@@ -25,6 +25,7 @@ def oracle_risk(b, X, y):
 
     xb = np.matmul(X, b)
     log_likelihood = np.sum(y * (xb - np.log(1 + np.exp(xb))) + (1 - y) * -np.log(1 + np.exp(xb)))
+
     return -log_likelihood / n
 
 
@@ -38,12 +39,16 @@ def oracle_risk_derivative(b, X, y):
     return -partial_res / n
 
 
-def joint_risk(params, X, s):
+def joint_risk(params, X, s, exact_c=None):
     X = add_bias(X)
     n = X.shape[0]
 
-    b = params[:-1]
-    c = params[-1]
+    if exact_c is None:
+        b = params[:-1]
+        c = params[-1]
+    else:
+        b = params
+        c = exact_c
 
     probability = c * sigma(np.matmul(X, b))
 
@@ -54,12 +59,16 @@ def joint_risk(params, X, s):
     return -log_likelihood / n
 
 
-def joint_risk_derivative(params, X, s):
+def joint_risk_derivative(params, X, s, exact_c=None):
     X = add_bias(X)
     n = X.shape[0]
 
-    b = params[:-1]
-    c = params[-1]
+    if exact_c is None:
+        b = params[:-1]
+        c = params[-1]
+    else:
+        b = params
+        c = exact_c
 
     exb = np.exp(np.matmul(X, b))
 
@@ -71,9 +80,10 @@ def joint_risk_derivative(params, X, s):
     # multiplier = - ((s - c) + s / exb) / ((1 + 1 / exb) * ((c - 1) * exb - 1))
     partial_res = np.sum(X * multiplier.reshape(-1, 1), axis=0)
 
-    derivative_wrt_c = np.sum((c * exb - s * exb - s) / (c * (c * exb - exb - 1)))
-    # derivative_wrt_c = np.sum((c - s - s / exb) / (c * (c - 1 - 1 / exb)))
-    partial_res = np.append(partial_res, derivative_wrt_c)
+    if exact_c is None:
+        derivative_wrt_c = np.sum((c * exb - s * exb - s) / (c * (c * exb - exb - 1)))
+        # derivative_wrt_c = np.sum((c - s - s / exb) / (c * (c - 1 - 1 / exb)))
+        partial_res = np.append(partial_res, derivative_wrt_c)
 
     return -partial_res / n
 
