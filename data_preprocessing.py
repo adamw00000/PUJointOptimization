@@ -17,7 +17,12 @@ def preprocess(X, y, s, test_size=0.2):
 def create_s(y, c):   # c - label_frequency
     s = np.array(y)
     positives = np.where(s == 1)[0]
-    
-    unlabelled_samples = positives[np.random.random(len(positives)) < 1 - c]
-    s[unlabelled_samples] = 0
-    return s
+    n_y1 = len(positives)
+
+    new_unlabeled_samples = positives[np.random.random(len(positives)) < 1 - c]
+    s[new_unlabeled_samples] = 0
+    n_s0 = len(new_unlabeled_samples)
+
+    n_s1 = n_y1 - n_s0
+    real_c = n_s1 / n_y1
+    return s, real_c

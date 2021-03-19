@@ -10,11 +10,12 @@ class JointClassifier(BasePUClassifier):
 
     def fit(self, X, s, c: float = None):
         if c is None:
-            b_init = np.random.random(X.shape[1] + 2) / 100
-            # b_init = np.zeros(X.shape[1] + 2)
+            # b_init = np.random.random(X.shape[1] + 2) / 100
+            b_init = np.zeros(X.shape[1] + 2)
+            b_init[-1] = 0.5  # initial c
 
             bounds = [(None, None) for i in range(X.shape[1] + 1)]
-            bounds.append((0, 1))
+            bounds.append((0.00001, 0.99999))
 
             res = scipy.optimize.minimize(
                 fun=joint_risk,
@@ -33,7 +34,7 @@ class JointClassifier(BasePUClassifier):
             res = scipy.optimize.minimize(
                 fun=joint_risk,
                 x0=b_init,
-                method='L-BFGS-B',
+                method='BFGS',
                 args=(X, s, c),
                 jac=joint_risk_derivative
             )

@@ -57,23 +57,23 @@ def calculate_metrics(clf, X_train, s_train, X_test, y_test, c, oracle_pred, con
         })
 
 
-def run_test(c, run_number):
-    s = create_s(y, c)
+def run_test(target_c, run_number):
+    s, c = create_s(y, target_c)
     X_train, X_test, y_train, y_test, s_train, s_test = preprocess(X, y, s, test_size=0.2)
 
     oracle_pred = oracle_prediction(X_train, y_train, X_test)
 
     dfs = []
     for name in joint_classifiers:
-        print(f'--- {name}: c = {c}, run {run_number + 1}/{total_runs} ---')
+        print(f'--- {name}: c = {target_c}, run {run_number + 1}/{total_runs} ---')
         df = calculate_metrics(joint_classifiers[name], X_train, s_train, X_test, y_test, c, oracle_pred)
-        df = df.assign(Method=name, c=c, RunNumber=run_number, ConstC=False)
+        df = df.assign(Method=name, c=target_c, RunNumber=run_number, ConstC=False)
         dfs.append(df)
     for name in const_c_classifiers:
-        print(f'--- {name}: c = {c}, run {run_number + 1}/{total_runs} (CONST c) ---')
+        print(f'--- {name}: c = {target_c}, run {run_number + 1}/{total_runs} (CONST c) ---')
         df = calculate_metrics(const_c_classifiers[name], X_train, s_train, X_test, y_test, c, oracle_pred,
                                const_c=True)
-        df = df.assign(Method=name, c=c, RunNumber=run_number, ConstC=True)
+        df = df.assign(Method=name, c=target_c, RunNumber=run_number, ConstC=True)
         dfs.append(df)
     return pd.concat(dfs)
 
@@ -129,7 +129,7 @@ if __name__ == '__main__':
         # 'DCCP': DccpClassifier(verbosity=1, dccp_max_iter=20),
     }
 
-    total_runs = 10
+    total_runs = 100
     c_values = np.arange(0.1, 1, 0.1)
 
     num_cores = multiprocessing.cpu_count()

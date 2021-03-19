@@ -2,9 +2,9 @@
 import datasets
 from data_preprocessing import create_s
 
-c = 0.1
+target_c = 0.1
 X, y = datasets.load_spambase()
-s = create_s(y, c)
+s, c = create_s(y, target_c)
 
 from data_preprocessing import preprocess
 
@@ -108,3 +108,23 @@ print('Accuracy:', accuracy(y_pred, y_test))
 
 estimation_error = np.mean(np.abs(y_proba - y_proba_oracle))
 print('Estimation error:', estimation_error)
+
+# # %%
+# import numpy as np
+#
+# from optimization import MMClassifier
+# from optimization.functions import oracle_risk, accuracy
+#
+# clf = MMClassifier(verbosity=1)
+# clf.fit(X_train, s_train)
+#
+# y_proba = clf.predict_proba(X_test)
+# y_pred = clf.predict(X_test)
+#
+# b = clf.get_params()
+# risk = oracle_risk(b, X_test, y_test)
+# print('Risk value:', risk)
+# print('Accuracy:', accuracy(y_pred, y_test))
+#
+# estimation_error = np.mean(np.abs(y_proba - y_proba_oracle))
+# print('Estimation error:', estimation_error)

@@ -7,7 +7,8 @@ from optimization.__base_classifier import BaseClassifier
 
 class OracleClassifier(BaseClassifier):
     def fit(self, X, y):
-        b_init = np.random.random(X.shape[1] + 1) / 100
+        # b_init = np.random.random(X.shape[1] + 1) / 100
+        b_init = np.zeros(X.shape[1] + 1)
 
         res = scipy.optimize.minimize(
             fun=oracle_risk,

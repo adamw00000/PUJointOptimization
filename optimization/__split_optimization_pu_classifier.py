@@ -34,7 +34,7 @@ class SplitOptimizationPUClassifier(BasePUClassifier):
             x0=old_c_estimate,
             args=(X, s, b_estimate),
             method='TNC',
-            bounds=[(0, 1)]
+            bounds=[(0.00001, 0.99999)]
         )
 
         if self.verbosity > 0:
@@ -66,6 +66,8 @@ class SplitOptimizationPUClassifier(BasePUClassifier):
 
                 c_estimate = new_c_estimate
                 b_estimate = self._minimize_wrt_b(X, s, c_estimate, b_estimate)
+
+            b_estimate = self._minimize_wrt_b(X, s, c_estimate, b_estimate)
 
             self.params = b_estimate
             self.c_estimate = c_estimate

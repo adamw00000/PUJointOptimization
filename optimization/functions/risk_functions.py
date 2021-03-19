@@ -1,6 +1,29 @@
+import warnings
 import numpy as np
 
 from optimization.functions.helper_functions import sigma, add_bias
+
+
+def safe_log_likelihood(probability, labels):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+
+        non_summed_log_likelihood = \
+            np.where(
+                (labels == 0) & (probability == 0),
+                0,
+                labels * np.log(probability)
+            ) + np.where(
+                (labels == 1) & (probability == 1),
+                0,
+                (1 - labels) * np.log(1 - probability)
+            )
+
+        if np.sum(np.isnan(non_summed_log_likelihood)) > 0:
+            warnings.warn("NaNs in result", RuntimeWarning)
+
+        log_likelihood = np.sum(non_summed_log_likelihood)
+    return log_likelihood
 
 
 def oracle_risk(b, X, y):
@@ -13,26 +36,7 @@ def oracle_risk(b, X, y):
     # xb = np.matmul(X, b)
     # log_likelihood = np.sum(y * (xb - np.log(1 + np.exp(xb))) + (1 - y) * -np.log(1 + np.exp(xb)))
 
-    import warnings
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-
-        non_summed_log_likelihood = \
-            np.where(
-                (y == 0) & (probability == 0),
-                0,
-                y * np.log(probability)
-            ) + np.where(
-                (y == 1) & (probability == 1),
-                0,
-                (1 - y) * np.log(1 - probability)
-            )
-
-        if np.sum(np.isnan(non_summed_log_likelihood)) > 0:
-            warnings.warn("NaNs in result", RuntimeWarning)
-
-        log_likelihood = np.sum(non_summed_log_likelihood)
-
+    log_likelihood = safe_log_likelihood(probability, y)
     return -log_likelihood / n
 
 
@@ -60,26 +64,7 @@ def joint_risk(params, X, s, exact_c=None):
     probability = c * sigma(np.matmul(X, b))
     # log_likelihood = np.sum(s * np.log(probability) + (1 - s) * np.log(1 - probability))
 
-    import warnings
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-
-        non_summed_log_likelihood = \
-            np.where(
-                (s == 0) & (probability == 0),
-                0,
-                s * np.log(probability)
-            ) + np.where(
-                (s == 1) & (probability == 1),
-                0,
-                (1 - s) * np.log(1 - probability)
-            )
-
-        if np.sum(np.isnan(non_summed_log_likelihood)) > 0:
-            warnings.warn("NaNs in result", RuntimeWarning)
-
-        log_likelihood = np.sum(non_summed_log_likelihood)
-
+    log_likelihood = safe_log_likelihood(probability, s)
     return -log_likelihood / n
 
 
@@ -94,16 +79,68 @@ def joint_risk_derivative(params, X, s, exact_c=None):
         b = params
         c = exact_c
 
-    exb = np.exp(np.matmul(X, b))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        exb = np.exp(np.matmul(X, b))
 
-    multiplier = - ((s - c) * exb + s) / ((1 + exb) * ((c - 1) * exb - 1))
-    partial_res = np.sum(X * multiplier.reshape(-1, 1), axis=0)
+    # multiplier = - ((s - c) * exb + s) / ((1 + exb) * ((c - 1) * exb - 1))
+    # partial_res = np.sum(X * multiplier.reshape(-1, 1), axis=0)
+
+    def safe_multiplier():
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            multiplier = np.where(
+                (exb > 1.3407807929942596e+154) | (np.isinf(exb)),
+                0,  # exb -> inf
+                - ((s - c) * exb + s) / ((1 + exb) * ((c - 1) * exb - 1))
+            )
+
+            if np.sum(np.isnan(multiplier)) > 0 or np.sum(np.isinf(multiplier)) > 0:
+                warnings.warn("NaNs/inf in result", RuntimeWarning)
+
+            res = np.sum(X * multiplier.reshape(-1, 1), axis=0)
+            return res
+
+    partial_res = safe_multiplier()
 
     if exact_c is None:
-        derivative_wrt_c = np.sum((c * exb - s * exb - s) / (c * (c * exb - exb - 1)))
+        # derivative_wrt_c = np.sum((c * exb - s * exb - s) / (c * (c * exb - exb - 1)))
+
+        def safe_derivative_wrt_c():
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+
+                partial = np.where(
+                    exb == 0,
+                    s / c,  # exb -> 0
+                    np.where(
+                        (exb > 1.3407807929942596e+154) | (np.isinf(exb)),
+                        (c - s) / c * (c - 1),  # exb -> inf
+                        (c * exb - s * exb - s) / (c * (c * exb - exb - 1))
+                    )
+                )
+
+                if np.sum(np.isnan(partial)) > 0 or np.sum(np.isinf(partial)) > 0:
+                    warnings.warn("NaNs/inf in result", RuntimeWarning)
+
+                return np.sum(partial)
+
+        derivative_wrt_c = safe_derivative_wrt_c()
         partial_res = np.append(partial_res, derivative_wrt_c)
 
     return -partial_res / n
+
+
+# def mm_q(b, X, s, c=None):
+#     X = add_bias(X)
+#     n = X.shape[0]
+#
+#     exb = np.exp(np.matmul(X, b))
+#     multiplier = - ((s - c) * exb + s) / ((1 + exb) * ((c - 1) * exb - 1))
+#     partial_res = np.sum(X * multiplier.reshape(-1, 1), axis=0)
+#
+#     return -partial_res / n
 
 
 def cccp_risk_wrt_b(b, X, s, c, b_prev):
@@ -148,27 +185,7 @@ def cccp_risk_wrt_c(c, X, s, b):
     probability = c * sigma(np.matmul(X, b))
     # log_likelihood = np.sum(s * np.log(probability) + (1 - s) * np.log(1 - probability))
 
-    import warnings
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-
-
-        non_summed_log_likelihood = \
-            np.where(
-                (s == 0) & (probability == 0),
-                0,
-                s * np.log(probability)
-            ) + np.where(
-                (s == 1) & (probability == 1),
-                0,
-                (1 - s) * np.log(1 - probability)
-            )
-
-        if np.sum(np.isnan(non_summed_log_likelihood)) > 0:
-            warnings.warn("NaNs in result", RuntimeWarning)
-
-        log_likelihood = np.sum(non_summed_log_likelihood)
-
+    log_likelihood = safe_log_likelihood(probability, s)
     return -log_likelihood / n
 
 
@@ -177,6 +194,27 @@ def cccp_risk_derivative_wrt_c(c, X, s, b):
     n = X.shape[0]
 
     exb = np.exp(np.matmul(X, b))
-    derivative_wrt_c = np.sum((c * exb - s * exb - s) / (c * (c * exb - exb - 1)))
+    # derivative_wrt_c = np.sum((c * exb - s * exb - s) / (c * (c * exb - exb - 1)))
+
+    def safe_derivative_wrt_c():
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            partial = np.where(
+                exb == 0,
+                s / c,  # exb -> 0
+                np.where(
+                    (exb > 1.3407807929942596e+154) | (np.isinf(exb)),
+                    (c - s) / c * (c - 1),  # exb -> inf
+                    (c * exb - s * exb - s) / (c * (c * exb - exb - 1))
+                )
+            )
+
+            if np.sum(np.isnan(partial)) > 0 or np.sum(np.isinf(partial)) > 0:
+                warnings.warn("NaNs/inf in result", RuntimeWarning)
+
+            return np.sum(partial)
+
+    derivative_wrt_c = safe_derivative_wrt_c()
 
     return -derivative_wrt_c / n
