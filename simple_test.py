@@ -27,10 +27,9 @@ print('Accuracy:', accuracy(y_pred, y_test))
 y_proba_oracle = y_proba
 
 # %%
-import numpy as np
-
 from optimization import NaiveClassifier
 from optimization.functions import oracle_risk, accuracy
+from optimization.metrics import auc, approximation_error
 
 clf = NaiveClassifier()
 clf.fit(X_train, s_train, c)
@@ -43,14 +42,13 @@ risk = oracle_risk(b, X_test, y_test)
 print('Risk value:', risk)
 print('Accuracy:', accuracy(y_pred, y_test))
 
-estimation_error = np.mean(np.abs(y_proba - y_proba_oracle))
-print('Estimation error:', estimation_error)
+print('AUC:', auc(y_test, y_pred))
+print('Approximation error:', approximation_error(y_proba, y_proba_oracle))
 
 # %%
-import numpy as np
-
 from optimization import JointClassifier
 from optimization.functions import oracle_risk, accuracy
+from optimization.metrics import c_error, auc, approximation_error
 
 clf = JointClassifier()
 clf.fit(X_train, s_train)
@@ -66,14 +64,16 @@ risk = oracle_risk(b, X_test, y_test)
 print('Risk value:', risk)
 print('Accuracy:', accuracy(y_pred, y_test))
 
-estimation_error = np.mean(np.abs(y_proba - y_proba_oracle))
-print('Estimation error:', estimation_error)
+print('c error:', c_error(clf.c_estimate, c))
+print('AUC:', auc(y_test, y_pred))
+print('Approximation error:', approximation_error(y_proba, y_proba_oracle))
 
 # %%
 import numpy as np
 
 from optimization import CccpClassifier
 from optimization.functions import oracle_risk, accuracy
+from optimization.metrics import c_error, auc, approximation_error
 
 clf = CccpClassifier(verbosity=1)
 clf.fit(X_train, s_train)
@@ -86,16 +86,16 @@ risk = oracle_risk(b, X_test, y_test)
 print('Risk value:', risk)
 print('Accuracy:', accuracy(y_pred, y_test))
 
-estimation_error = np.mean(np.abs(y_proba - y_proba_oracle))
-print('Estimation error:', estimation_error)
+print('c error:', c_error(clf.c_estimate, c))
+print('AUC:', auc(y_test, y_pred))
+print('Approximation error:', approximation_error(y_proba, y_proba_oracle))
 
 # %%
-import numpy as np
-
 from optimization import DccpClassifier
 from optimization.functions import oracle_risk, accuracy
+from optimization.metrics import c_error, auc, approximation_error
 
-clf = DccpClassifier(tau=1)
+clf = DccpClassifier(tau=1, verbosity=1, dccp_max_iter=100)
 clf.fit(X_train, s_train)
 
 y_proba = clf.predict_proba(X_test)
@@ -106,10 +106,11 @@ risk = oracle_risk(b, X_test, y_test)
 print('Risk value:', risk)
 print('Accuracy:', accuracy(y_pred, y_test))
 
-estimation_error = np.mean(np.abs(y_proba - y_proba_oracle))
-print('Estimation error:', estimation_error)
+print('c error:', c_error(clf.c_estimate, c))
+print('AUC:', auc(y_test, y_pred))
+print('Approximation error:', approximation_error(y_proba, y_proba_oracle))
 
-# # %%
+# %%
 # import numpy as np
 #
 # from optimization import MMClassifier

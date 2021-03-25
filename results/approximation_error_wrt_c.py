@@ -120,13 +120,13 @@ if __name__ == '__main__':
         'Naive': NaiveClassifier(),
         'Joint': JointClassifier(),
         'CCCP': CccpClassifier(verbosity=1),
-        # 'DCCP': DccpClassifier(verbosity=1, dccp_max_iter=20),
+        # 'DCCP': DccpClassifier(tau=1, verbosity=1),
     }
 
     joint_classifiers = {
         'Joint': JointClassifier(),
         'CCCP': CccpClassifier(verbosity=1),
-        # 'DCCP': DccpClassifier(verbosity=1, dccp_max_iter=20),
+        # 'DCCP': DccpClassifier(tau=1, verbosity=1),
     }
 
     total_runs = 100
