@@ -1,5 +1,6 @@
 import os
 import re
+from scipy.io import arff
 
 import pandas as pd
 
@@ -23,15 +24,41 @@ def read_names_file(filename):
         return columns
 
 
-def load_spambase():
-    dataset = pd.read_csv(os.path.join(dir_path, 'data', 'spambase.data'))
-    columns = read_names_file(os.path.join(dir_path, 'data', 'spambase.names'))
+def get_datasets():
+    names = [
+        # 'Adult',
+        # 'BreastCancer',
+        # 'credit-a',
+        # 'credit-g',
+        # 'diabetes',
+        # 'heart-c',
+        'spambase',
+        'vote',
+        'wdbc',
+    ]
 
-    X = dataset.iloc[:, :-1]
+    return {name: load_dataset(name) for name in names}
 
-    X_normalized = (X - X.mean()) / X.std()
 
-    y = dataset.iloc[:, -1]
+# def load_spambase():
+#     dataset = pd.read_csv(os.path.join(dir_path, 'data', 'spambase.data'))
+#     columns = read_names_file(os.path.join(dir_path, 'data', 'spambase.names'))
+#
+#     X = dataset.iloc[:, :-1]
+#
+#     X_normalized = (X - X.mean()) / X.std()
+#
+#     y = dataset.iloc[:, -1]
+#
+#     X_normalized.columns = columns
+#     return X_normalized, y
 
-    X_normalized.columns = columns
-    return X_normalized, y
+
+def load_dataset(name):
+    data = arff.loadarff(os.path.join(dir_path, 'data', f'{name}.arff'))
+    df = pd.DataFrame(data[0])
+
+    X = df.iloc[:, :-1]
+    y = df.iloc[:, -1]
+
+    return X, y

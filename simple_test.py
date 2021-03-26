@@ -3,7 +3,7 @@ import datasets
 from data_preprocessing import create_s
 
 target_c = 0.1
-X, y = datasets.load_spambase()
+X, y = datasets.get_datasets()['spambase']
 s, c = create_s(y, target_c)
 
 from data_preprocessing import preprocess
@@ -12,6 +12,7 @@ X_train, X_test, y_train, y_test, s_train, s_test = preprocess(X, y, s, test_siz
 
 from optimization import OracleClassifier
 from optimization.functions import oracle_risk, accuracy
+from optimization.metrics import auc
 
 clf = OracleClassifier()
 clf.fit(X_train, y_train.to_numpy())
@@ -23,6 +24,7 @@ b = clf.get_params()
 risk = oracle_risk(b, X_test, y_test)
 print('Risk value:', risk)
 print('Accuracy:', accuracy(y_pred, y_test))
+print('AUC:', auc(y_test, y_pred))
 
 y_proba_oracle = y_proba
 
@@ -69,8 +71,6 @@ print('AUC:', auc(y_test, y_pred))
 print('Approximation error:', approximation_error(y_proba, y_proba_oracle))
 
 # %%
-import numpy as np
-
 from optimization import CccpClassifier
 from optimization.functions import oracle_risk, accuracy
 from optimization.metrics import c_error, auc, approximation_error
@@ -95,7 +95,7 @@ from optimization import DccpClassifier
 from optimization.functions import oracle_risk, accuracy
 from optimization.metrics import c_error, auc, approximation_error
 
-clf = DccpClassifier(tau=1, verbosity=1, dccp_max_iter=100)
+clf = DccpClassifier(tau=1, verbosity=1, dccp_max_iter=1000)
 clf.fit(X_train, s_train)
 
 y_proba = clf.predict_proba(X_test)
@@ -111,8 +111,6 @@ print('AUC:', auc(y_test, y_pred))
 print('Approximation error:', approximation_error(y_proba, y_proba_oracle))
 
 # %%
-# import numpy as np
-#
 # from optimization import MMClassifier
 # from optimization.functions import oracle_risk, accuracy
 #
