@@ -159,12 +159,14 @@ def get_latex_table(metric, metric_pivot, rank_pivot):
         for row in metric_pivot.loc[metric_pivot.ConstC == const_c].iterrows():
             latex_string += f"{row[1]['Dataset']:16} "
 
-            metric_values = [item[1] for (i, item) in enumerate(row[1].items())
+            values = [item[1] for (i, item) in enumerate(row[1].items())
                              if i >= 2 and not np.isnan(item[1])]
+            non_oracle_values = [item[1] for (i, item) in enumerate(row[1].items())
+                             if i >= 2 and not np.isnan(item[1]) and not item[0] == 'Oracle']
 
-            for value in metric_values:
+            for value in values:
                 text = f"{value}"
-                if value == best_function[metric](metric_values):
+                if value == best_function[metric](non_oracle_values):
                     text = "\\textbf{" + text + "}"
                 latex_string += f"& {text:14} "
             latex_string += '\\\\\n'
@@ -173,11 +175,11 @@ def get_latex_table(metric, metric_pivot, rank_pivot):
             latex_string += f"{'Rank':16} "
             values = [item[1] for (i, item) in enumerate(row[1].items())
                       if i >= 1 and not np.isnan(item[1])]
-            method_values = [item[1] for (i, item) in enumerate(row[1].items())
+            non_oracle_values = [item[1] for (i, item) in enumerate(row[1].items())
                       if i >= 1 and not np.isnan(item[1]) and not item[0] == 'Oracle']
             for value in values:
                 text = f"{value}"
-                if value == np.min(method_values):
+                if value == np.min(non_oracle_values):
                     text = "\\textbf{" + text + "}"
                 latex_string += f"& {text:14} "
             latex_string += '\\\\\n'
@@ -209,6 +211,7 @@ def create_rankings(metrics_df, oracle_metrics_df):
             .reset_index(drop=False)
 
         mean_metrics_df = pd.concat([mean_oracle_metrics_df, mean_metrics_df])
+        mean_metrics_df.Value = mean_metrics_df.Value.round(3)
 
         ranks = mean_metrics_df.groupby(['Dataset', 'ConstC'])\
             .Value\
