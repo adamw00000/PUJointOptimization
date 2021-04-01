@@ -11,7 +11,7 @@ from optimization.__split_optimization_pu_classifier import SplitOptimizationPUC
 class DccpClassifier(SplitOptimizationPUClassifier):
     tau: float
 
-    def __init__(self, tol: float = 1e-10, max_iter: int = 100, dccp_max_iter: int = 1000, tau: float = 1,
+    def __init__(self, tol: float = 1e-5, max_iter: int = 100, dccp_max_iter: int = 1000, tau: float = 1,
                  verbosity: int = 0):
         super().__init__('DCCP', tol=tol, max_iter=max_iter, max_inner_iter=dccp_max_iter, verbosity=verbosity)
         self.tau = tau
@@ -38,6 +38,7 @@ class DccpClassifier(SplitOptimizationPUClassifier):
 
         problem = cvx.Problem(cvx.Minimize(expression), [t == t_expression])
 
+        # b.value = np.zeros_like(old_b_estimate)
         b.value = old_b_estimate
         t.value = np.array([0])
 

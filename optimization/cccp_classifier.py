@@ -9,7 +9,7 @@ from optimization.__split_optimization_pu_classifier import SplitOptimizationPUC
 class CccpClassifier(SplitOptimizationPUClassifier):
     cg_max_iter: int
 
-    def __init__(self, tol: float = 1e-10, max_iter: int = 100, cccp_max_iter: int = 1000, cg_max_iter: int = 1000,
+    def __init__(self, tol: float = 1e-5, max_iter: int = 100, cccp_max_iter: int = 1000, cg_max_iter: int = 1000,
                  verbosity: int = 0):
         super().__init__('CCCP', tol=tol, max_iter=max_iter, max_inner_iter=cccp_max_iter, verbosity=verbosity)
         self.cg_max_iter = cg_max_iter

@@ -28,13 +28,19 @@ class SplitOptimizationPUClassifier(BasePUClassifier):
         pass
 
     def _minimize_wrt_c(self, X, s, b_estimate, old_c_estimate) -> float:
+        P_S_eq_1 = np.mean(s == 1)
+
         res = scipy.optimize.minimize(
             fun=cccp_risk_wrt_c,
             jac=cccp_risk_derivative_wrt_c,
             x0=old_c_estimate,
             args=(X, s, b_estimate),
             method='TNC',
-            bounds=[(0.00001, 0.99999)]
+            # method='L-BFGS-B',
+            bounds=[(P_S_eq_1, 0.99999)],
+            options={
+                # 'disp': True
+            }
         )
 
         if self.verbosity > 0:
@@ -47,7 +53,8 @@ class SplitOptimizationPUClassifier(BasePUClassifier):
         b_estimate = np.zeros(X.shape[1] + 1)
 
         if c is None:
-            c_estimate = 0.5
+            P_S_eq_1 = np.mean(s == 1)
+            c_estimate = (1 + P_S_eq_1) / 2
 
             if self.verbosity > 1:
                 print('Initial b value:', b_estimate)
