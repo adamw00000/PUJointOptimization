@@ -27,11 +27,11 @@ def read_names_file(filename):
 def get_datasets():
     names = [
         # 'Adult',
-        # 'BreastCancer',
-        # 'credit-a',
-        # 'credit-g',
-        # 'diabetes',
-        # 'heart-c',
+        'BreastCancer',
+        'credit-a',
+        'credit-g',
+        'diabetes',
+        'heart-c',
         'spambase',
         'vote',
         'wdbc',
