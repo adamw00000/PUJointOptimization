@@ -8,7 +8,8 @@ import seaborn as sns
 
 from joblib import Parallel, delayed
 from data_preprocessing import create_s, preprocess
-from optimization import CccpClassifier, JointClassifier, OracleClassifier, DccpClassifier, NaiveClassifier
+from optimization import CccpClassifier, JointClassifier, OracleClassifier, DccpClassifier, \
+    NaiveClassifier, MMClassifier
 from optimization.metrics import approximation_error, c_error, auc
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -251,16 +252,18 @@ if __name__ == '__main__':
         'Naive': NaiveClassifier(),
         'Joint': JointClassifier(),
         'CCCP': CccpClassifier(verbosity=1),
+        'MM': MMClassifier(verbosity=1),
         # 'DCCP': DccpClassifier(tau=1, verbosity=1),
     }
 
     joint_classifiers = {
         'Joint': JointClassifier(),
         'CCCP': CccpClassifier(verbosity=1),
+        'MM': MMClassifier(verbosity=1),
         # 'DCCP': DccpClassifier(tau=1, verbosity=1),
     }
 
-    total_runs = 100
+    total_runs = 10
     c_values = np.arange(0.1, 1, 0.1)
 
     num_cores = multiprocessing.cpu_count() - 1

@@ -146,15 +146,8 @@ def joint_risk_derivative(params, X, s, exact_c=None):
     return -partial_res / n
 
 
-# def mm_q(b, X, s, c=None):
-#     X = add_bias(X)
-#     n = X.shape[0]
-#
-#     exb = np.exp(np.matmul(X, b))
-#     multiplier = - ((s - c) * exb + s) / ((1 + exb) * ((c - 1) * exb - 1))
-#     partial_res = np.sum(X * multiplier.reshape(-1, 1), axis=0)
-#
-#     return -partial_res / n
+def mm_q(b, X, s, c):
+    return joint_risk_derivative(b, X, s, exact_c=c)
 
 
 def cccp_risk_wrt_b(b, X, s, c, b_prev):
