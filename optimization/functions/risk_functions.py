@@ -6,6 +6,25 @@ from sklearn.metrics import log_loss
 from optimization.functions.helper_functions import sigma, add_bias
 
 
+def my_log_loss(y_true, y_pred, *, eps=1e-15, sample_weight=None):
+    if y_true.ndim == 1:
+        y_true = y_true[:, np.newaxis]
+    if y_true.shape[1] == 1:
+        y_true = np.append(1 - y_true, y_true, axis=1)
+
+    y_pred = np.clip(y_pred, eps, 1 - eps)
+
+    if y_pred.ndim == 1:
+        y_pred = y_pred[:, np.newaxis]
+    if y_pred.shape[1] == 1:
+        y_pred = np.append(1 - y_pred, y_pred, axis=1)
+
+    y_pred /= y_pred.sum(axis=1)[:, np.newaxis]
+    loss = -(y_true * np.log(y_pred)).sum(axis=1)
+
+    return np.average(loss, weights=sample_weight)
+
+
 def oracle_risk(b, X, y):
     X = add_bias(X)
     n = X.shape[0]
@@ -16,7 +35,8 @@ def oracle_risk(b, X, y):
     # xb = np.matmul(X, b)
     # log_likelihood = np.sum(y * (xb - np.log(1 + np.exp(xb))) + (1 - y) * -np.log(1 + np.exp(xb)))
 
-    return log_loss(y, probability, normalize=True)
+    return my_log_loss(y, probability)
+
 
 def oracle_risk_derivative(b, X, y):
     X = add_bias(X)
@@ -59,7 +79,7 @@ def joint_risk(params, X, s, exact_c=None):
     probability = c * sigma(np.matmul(X, b))
     # log_likelihood = np.sum(s * np.log(probability) + (1 - s) * np.log(1 - probability))
 
-    return log_loss(s, probability, normalize=True)
+    return my_log_loss(s, probability)
 
 
 def joint_risk_derivative(params, X, s, exact_c=None):
@@ -224,7 +244,7 @@ def cccp_risk_wrt_c(c, X, s, b):
     probability = c * sigma(np.matmul(X, b))
     # log_likelihood = np.sum(s * np.log(probability) + (1 - s) * np.log(1 - probability))
 
-    return log_loss(s, probability, normalize=True)
+    return my_log_loss(s, probability)
 
 
 def cccp_risk_derivative_wrt_c(c, X, s, b):
