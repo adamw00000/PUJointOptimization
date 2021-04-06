@@ -17,7 +17,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 
 def oracle_prediction(X_train, y_train, X_test):
     clf = OracleClassifier()
-    clf.fit(X_train, y_train.to_numpy())
+    clf.fit(X_train, y_train)
 
     y_proba = clf.predict_proba(X_test)
     return y_proba
