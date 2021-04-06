@@ -10,7 +10,7 @@ from optimization.functions import mm_q, add_bias
 class MMClassifier(SplitOptimizationPUClassifier):
     cg_max_iter: int
 
-    def __init__(self, tol: float = 1e-5, max_iter: int = 100, mm_max_iter: int = 1000,
+    def __init__(self, tol: float = 1e-4, max_iter: int = 100, mm_max_iter: int = 1000,
                  verbosity: int = 0):
         super().__init__('MM', tol=tol, max_iter=max_iter, max_inner_iter=mm_max_iter, verbosity=verbosity)
 

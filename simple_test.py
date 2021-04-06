@@ -115,7 +115,7 @@ from optimization import MMClassifier
 from optimization.functions import oracle_risk, accuracy
 from optimization.metrics import c_error, auc, approximation_error
 
-clf = MMClassifier(verbosity=1)
+clf = MMClassifier(verbosity=1, tol=1e-3)
 clf.fit(X_train, s_train)
 
 y_proba = clf.predict_proba(X_test)
@@ -129,3 +129,4 @@ print('Accuracy:', accuracy(y_pred, y_test))
 print('c error:', c_error(clf.c_estimate, c))
 print('AUC:', auc(y_test, y_pred))
 print('Approximation error:', approximation_error(y_proba, y_proba_oracle))
+

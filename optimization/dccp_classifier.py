@@ -11,7 +11,7 @@ from optimization.__split_optimization_pu_classifier import SplitOptimizationPUC
 class DccpClassifier(SplitOptimizationPUClassifier):
     tau: float
 
-    def __init__(self, tol: float = 1e-5, max_iter: int = 100, dccp_max_iter: int = 1000, tau: float = 1,
+    def __init__(self, tol: float = 1e-4, max_iter: int = 100, dccp_max_iter: int = 1000, tau: float = 1,
                  verbosity: int = 0):
         super().__init__('DCCP', tol=tol, max_iter=max_iter, max_inner_iter=dccp_max_iter, verbosity=verbosity)
         self.tau = tau
