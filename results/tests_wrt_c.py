@@ -263,7 +263,7 @@ if __name__ == '__main__':
         # 'DCCP': DccpClassifier(tau=1, verbosity=1),
     }
 
-    total_runs = 10
+    total_runs = 100
     c_values = np.arange(0.1, 1, 0.1)
 
     num_cores = multiprocessing.cpu_count() - 1
