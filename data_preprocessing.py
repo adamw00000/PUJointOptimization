@@ -7,6 +7,7 @@ from sklearn.feature_selection import mutual_info_classif
 
 def preprocess(X, y, s, test_size=0.2, n_best_features=5):
     X = X.fillna(X.mean())
+    y = np.array(y)
 
     mutual_info_scores = mutual_info_classif(X, s)
     mutual_info_best = np.argsort(mutual_info_scores)[::-1]

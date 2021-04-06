@@ -15,7 +15,7 @@ from optimization.functions import oracle_risk, accuracy
 from optimization.metrics import auc
 
 clf = OracleClassifier()
-clf.fit(X_train, y_train.to_numpy())
+clf.fit(X_train, y_train)
 
 y_proba = clf.predict_proba(X_test)
 y_pred = clf.predict(X_test)
