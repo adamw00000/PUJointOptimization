@@ -81,7 +81,8 @@ def joint_risk_derivative(params, X, s, exact_c=None):
 
 
 def mm_q(b, X, s, c):
-    return joint_risk_derivative(b, X, s, exact_c=c)
+    n = X.shape[0]
+    return n * joint_risk_derivative(b, X, s, exact_c=c)
 
 
 def cccp_risk_wrt_b(b, X, s, c, b_prev):
