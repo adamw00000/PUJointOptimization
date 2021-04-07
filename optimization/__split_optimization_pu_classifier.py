@@ -29,14 +29,15 @@ class SplitOptimizationPUClassifier(BasePUClassifier):
 
     def _minimize_wrt_c(self, X, s, b_estimate, old_c_estimate) -> float:
         P_S_eq_1 = np.mean(s == 1)
+        c_estimate = (P_S_eq_1 + 1) / 2
 
         res = scipy.optimize.minimize(
             fun=cccp_risk_wrt_c,
             jac=cccp_risk_derivative_wrt_c,
-            x0=old_c_estimate,
+            x0=c_estimate,
             args=(X, s, b_estimate),
-            method='TNC',
-            # method='L-BFGS-B',
+            method='TNC', # better?
+            # method='L-BFGS-B', # faster?
             bounds=[(P_S_eq_1, 0.99999)],
             options={
                 # 'disp': True

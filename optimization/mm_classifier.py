@@ -15,7 +15,9 @@ class MMClassifier(SplitOptimizationPUClassifier):
         super().__init__('MM', tol=tol, max_iter=max_iter, max_inner_iter=mm_max_iter, verbosity=verbosity)
 
     def _minimize_wrt_b(self, X, s, c, old_b_estimate) -> npt.ArrayLike:
-        b_estimate = old_b_estimate
+        # b_estimate = old_b_estimate
+        b_estimate = np.zeros_like(old_b_estimate)
+
         X_with_bias = add_bias(X)
         P = csc_matrix(np.matmul(X_with_bias.T, X_with_bias) / 4)
 

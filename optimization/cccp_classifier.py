@@ -15,7 +15,8 @@ class CccpClassifier(SplitOptimizationPUClassifier):
         self.cg_max_iter = cg_max_iter
 
     def _minimize_wrt_b(self, X, s, c_estimate, old_b_estimate) -> npt.ArrayLike:
-        b_estimate = old_b_estimate
+        # b_estimate = old_b_estimate
+        b_estimate = np.zeros_like(old_b_estimate)
 
         for j in range(self.max_inner_iter):
             if self.verbosity > 1:

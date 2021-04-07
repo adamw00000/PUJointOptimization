@@ -4,6 +4,7 @@ import numpy as np
 
 from optimization.functions.helper_functions import sigma, add_bias
 
+
 # from sklearn.metrics import log_loss
 def my_log_loss(y_true, y_pred, *, eps=1e-15, sample_weight=None):
     if y_true.ndim == 1:
