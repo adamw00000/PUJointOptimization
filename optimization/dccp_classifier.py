@@ -11,7 +11,7 @@ from optimization.__split_optimization_pu_classifier import SplitOptimizationPUC
 class DccpClassifier(SplitOptimizationPUClassifier):
     tau: float
 
-    def __init__(self, tol: float = 1e-5, max_iter: int = 100, dccp_max_iter: int = 1000, tau: float = 1,
+    def __init__(self, tol: float = 1e-4, max_iter: int = 100, dccp_max_iter: int = 1000, tau: float = 1,
                  verbosity: int = 0):
         super().__init__('DCCP', tol=tol, max_iter=max_iter, max_inner_iter=dccp_max_iter, verbosity=verbosity)
         self.tau = tau
@@ -26,12 +26,9 @@ class DccpClassifier(SplitOptimizationPUClassifier):
         t = cvx.Variable(1)
 
         f1 = s * cvx.log(c_estimate)
-        # f2_1 = cvx.multiply(s, X @ b - cvx.logistic(X @ b))
-        # f2_2 = cvx.multiply(s - 1, cvx.logistic(X @ b))
         f2 = cvx.multiply(s, X @ b) - cvx.logistic(X @ b)
         f3 = cvx.multiply(s - 1, cvx.logistic(cvx.log(1 - c_estimate) + X @ b))
-
-        # print(f1.curvature, f2_1.curvature, f2_2.curvature, f3.curvature)
+        # print(f1.curvature, f2.curvature, f3.curvature)
 
         expression = -1/n * cvx.sum(f1 + f2) - t
         t_expression = -1/n * cvx.sum(f3)
@@ -50,11 +47,7 @@ class DccpClassifier(SplitOptimizationPUClassifier):
         # print(problem.is_dcp(), dccp.is_dccp(problem))
         result = problem.solve(method='dccp', tau=self.tau, solver=cvx.MOSEK, max_iter=self.max_inner_iter,
                                verbose=True if self.verbosity > 1 else False)
-        # result = problem.solve(method='dccp', tau=self.tau, verbose=True, max_iter=5,
-        #                        max_iters=100, ccp_times=1, solver=cvx.ECOS)
 
         print("DCCP problem status:", problem.status)
-        # print("b =", b.value)
-        # print("cost value =", result[0])
 
         return b.value

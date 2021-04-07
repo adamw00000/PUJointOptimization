@@ -8,7 +8,8 @@ import seaborn as sns
 
 from joblib import Parallel, delayed
 from data_preprocessing import create_s, preprocess
-from optimization import CccpClassifier, JointClassifier, OracleClassifier, DccpClassifier, NaiveClassifier
+from optimization import CccpClassifier, JointClassifier, OracleClassifier, DccpClassifier, \
+    NaiveClassifier, MMClassifier
 from optimization.metrics import approximation_error, c_error, auc
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -16,7 +17,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 
 def oracle_prediction(X_train, y_train, X_test):
     clf = OracleClassifier()
-    clf.fit(X_train, y_train.to_numpy())
+    clf.fit(X_train, y_train)
 
     y_proba = clf.predict_proba(X_test)
     return y_proba
@@ -251,12 +252,14 @@ if __name__ == '__main__':
         'Naive': NaiveClassifier(),
         'Joint': JointClassifier(),
         'CCCP': CccpClassifier(verbosity=1),
+        'MM': MMClassifier(verbosity=1),
         # 'DCCP': DccpClassifier(tau=1, verbosity=1),
     }
 
     joint_classifiers = {
         'Joint': JointClassifier(),
         'CCCP': CccpClassifier(verbosity=1),
+        'MM': MMClassifier(verbosity=1),
         # 'DCCP': DccpClassifier(tau=1, verbosity=1),
     }
 
