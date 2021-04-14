@@ -52,6 +52,14 @@ print('c error:', c_error(clf.c_estimate, c))
 print('AUC:', auc(y_test, y_pred))
 print('Approximation error:', approximation_error(y_proba, y_proba_oracle))
 
+import numpy as np
+P_s_1 = np.mean(s == 1)
+alpha = np.mean(y == 1)
+est_alpha = (P_s_1 * (1 - est_c)) / (est_c * (1 - P_s_1))
+correct_est_alpha = (P_s_1 * (1 - c)) / (c * (1 - P_s_1))
+print(f'Alpha: {alpha}, estimated alpha: {est_alpha}, error: {np.abs(est_alpha - alpha)}, '
+      f'correct estimate error: {np.abs(correct_est_alpha - alpha)}')
+
 # %%
 from optimization.em_cc_classifier import EmCcClassifier
 from optimization.functions import oracle_risk, accuracy
