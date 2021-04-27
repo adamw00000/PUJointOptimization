@@ -12,3 +12,8 @@ def c_error(c_estimate, c):
 
 def auc(y, y_pred):
     return roc_auc_score(y, y_pred)
+
+
+def alpha_error(alpha_estimate, y):
+    alpha = np.mean(y == 1)
+    return np.abs(alpha - alpha_estimate)

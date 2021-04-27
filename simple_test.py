@@ -130,3 +130,12 @@ print('c error:', c_error(clf.c_estimate, c))
 print('AUC:', auc(y_test, y_pred))
 print('Approximation error:', approximation_error(y_proba, y_proba_oracle))
 
+# %%
+from optimization.c_estimation import TIcEEstimator
+
+est = TIcEEstimator()
+est.fit(X_train, s_train)
+
+from optimization.metrics import c_error, alpha_error
+print('c error:', c_error(est.c_estimate, c))
+print('alpha error:', alpha_error(est.get_STD_alpha(), y))
