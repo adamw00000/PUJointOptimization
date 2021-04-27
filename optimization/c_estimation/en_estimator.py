@@ -1,15 +1,14 @@
 import time
-
 import numpy as np
 
 from optimization import OracleClassifier
-from optimization.c_estimation.__base_c_estimator import BaseCEstimator
+from optimization.c_estimation.base_c_estimator import BaseCEstimator
 
 
 class ElkanNotoEstimator(BaseCEstimator):
     time: float
 
-    def fit(self, X, s, folds=None):
+    def fit(self, X, s):
         self.P_s_1 = float(np.mean(s == 1))
 
         ti = time.time()

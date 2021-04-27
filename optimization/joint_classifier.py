@@ -1,24 +1,25 @@
 import numpy as np
 import scipy.optimize
+import typing
 
 from optimization.functions import joint_risk, joint_risk_derivative
 from optimization.__base_pu_classifier import BasePUClassifier
 
 
 class JointClassifier(BasePUClassifier):
-    c_estimate: float
-
     def fit(self, X, s, c: float = None):
+        self.P_S_1 = np.mean(s == 1)
         if c is None:
-            P_S_eq_1 = np.mean(s == 1)
-            c_init = (1 + P_S_eq_1) / 2
+            c_init = (1 + self.P_S_1) / 2
 
             # b_init = np.random.random(X.shape[1] + 2) / 100
             b_init = np.zeros(X.shape[1] + 2)
             b_init[-1] = c_init  # initial c
 
-            bounds = [(None, None) for i in range(X.shape[1] + 1)]
-            bounds.append((P_S_eq_1, 0.99999))
+            bounds_type = typing.List[typing.Tuple[typing.Union[float, None], typing.Union[float, None]]]
+
+            bounds: bounds_type = [(None, None) for _ in range(X.shape[1] + 1)]
+            bounds.append((self.P_S_1, 0.99999))
 
             res = scipy.optimize.minimize(
                 fun=joint_risk,

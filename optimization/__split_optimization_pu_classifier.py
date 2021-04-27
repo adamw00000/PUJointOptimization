@@ -4,6 +4,7 @@ import scipy.optimize
 
 from abc import abstractmethod
 from optimization.__base_pu_classifier import BasePUClassifier
+from optimization.c_estimation.pure_alpha_estimator import PureAlphaEstimator
 from optimization.functions import cccp_risk_wrt_c, cccp_risk_derivative_wrt_c
 
 
@@ -12,8 +13,6 @@ class SplitOptimizationPUClassifier(BasePUClassifier):
     max_iter: int
     max_inner_iter: int
     verbosity: int
-
-    c_estimate: float
 
     def __init__(self, inner_method_name: str, tol: float, max_iter: int, max_inner_iter: int,
                  verbosity: int):
@@ -28,17 +27,17 @@ class SplitOptimizationPUClassifier(BasePUClassifier):
         pass
 
     def _minimize_wrt_c(self, X, s, b_estimate, old_c_estimate) -> float:
-        P_S_eq_1 = np.mean(s == 1)
-        c_estimate = (P_S_eq_1 + 1) / 2
+        self.P_S_1 = np.mean(s == 1)
+        c_estimate = (self.P_S_1 + 1) / 2
 
         res = scipy.optimize.minimize(
             fun=cccp_risk_wrt_c,
             jac=cccp_risk_derivative_wrt_c,
-            x0=c_estimate,
+            x0=np.array([c_estimate]),
             args=(X, s, b_estimate),
             method='TNC',  # better?
             # method='L-BFGS-B',  # faster?
-            bounds=[(P_S_eq_1, 0.99999)],
+            bounds=[(self.P_S_1, 0.99999)],
             options={
                 # 'disp': True
             }

@@ -44,6 +44,62 @@ def oracle_risk_derivative(b, X, y):
     return -partial_res / n
 
 
+def my_log_loss_for_weighted(y_true, y_pred, *, eps=1e-15, w_pos_pos, w_pos_neg, w_neg_pos, w_neg_neg):
+    if y_true.ndim == 1:
+        y_true = y_true.reshape(-1, 1)
+
+    weight_matrix_neg = np.where(y_true == 1, w_pos_neg, w_neg_neg)
+    weight_matrix_pos = np.where(y_true == 1, w_pos_pos, w_neg_pos)
+    weight_matrix = np.append(weight_matrix_neg, weight_matrix_pos, axis=1)
+
+    y_pred = np.clip(y_pred, eps, 1 - eps)
+
+    if y_pred.ndim == 1:
+        y_pred = y_pred.reshape(-1, 1)
+    if y_pred.shape[1] == 1:
+        y_pred = np.append(1 - y_pred, y_pred, axis=1)
+
+    y_pred /= y_pred.sum(axis=1)[:, np.newaxis]
+
+    loss = -(weight_matrix * np.log(y_pred)).sum(axis=1)
+
+    return np.average(loss)
+
+
+def weighted_risk(b, X, s, c):
+    X = add_bias(X)
+    probability = sigma(np.matmul(X, b))
+
+    # labeled_examples = np.where(s == 0)[0]
+    # neg_weight_labeled_samples = s[labeled_examples]
+    # s_full = np.append(s, neg_weight_labeled_samples)
+    #
+    # base_weights = np.where(s == 0, 1, 1 / c)
+    # neg_weights = (1 - 1 / c) * np.ones(len(neg_weight_labeled_samples))
+    # weights = np.append(base_weights, neg_weights)
+    #
+    # neg_weight_labeled_probas = probability[labeled_examples]
+    # probability_full = np.append(probability, neg_weight_labeled_probas)
+
+    return my_log_loss_for_weighted(s, probability,
+                                    w_pos_pos=1/c,
+                                    w_pos_neg=1 - 1/c,
+                                    w_neg_neg=1,
+                                    w_neg_pos=0)
+
+
+def weighted_risk_derivative(b, X, s, c):
+    X = add_bias(X)
+    n = X.shape[0]
+
+    sig = sigma(np.matmul(X, b))
+
+    # multiplier = s / c + sig
+    multiplier = s / c - sig + 2 * s * sig
+    partial_res = np.sum(X * multiplier.reshape(-1, 1), axis=0)
+    return -partial_res / n
+
+
 def joint_risk(params, X, s, exact_c=None):
     X = add_bias(X)
 

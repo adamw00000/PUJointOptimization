@@ -7,7 +7,7 @@ from bitarray import bitarray
 import time
 import heapq
 
-from optimization.c_estimation.__base_c_estimator import BaseCEstimator
+from optimization.c_estimation.base_c_estimator import BaseCEstimator
 
 
 class TIcEEstimator(BaseCEstimator):
@@ -40,7 +40,7 @@ class TIcEEstimator(BaseCEstimator):
         self.useMostPromisingOnly = useMostPromisingOnly
         self.minT = minT
 
-    def fit(self, X, s, folds=None):
+    def fit(self, X, s):
         self.P_s_1 = float(np.mean(s == 1))
 
         if type(X) == pd.DataFrame:

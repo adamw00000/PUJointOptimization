@@ -9,8 +9,9 @@ import seaborn as sns
 from joblib import Parallel, delayed
 from data_preprocessing import create_s, preprocess
 from optimization import CccpClassifier, JointClassifier, OracleClassifier, DccpClassifier, \
-    NaiveClassifier, MMClassifier
-from optimization.metrics import approximation_error, c_error, auc
+    NaiveClassifier, MMClassifier, WeightedClassifier
+from optimization.c_estimation import TIcEEstimator, ElkanNotoEstimator
+from optimization.metrics import approximation_error, c_error, auc, alpha_error
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -37,7 +38,7 @@ def joint_prediction(clf, X_train, s_train, X_test):
     return y_proba, clf.c_estimate
 
 
-def calculate_metrics(clf, X_train, s_train, X_test, y_test, c, oracle_pred, const_c: bool = False):
+def calculate_metrics(clf, X_train, y_train, s_train, X_test, y_test, c, oracle_pred, const_c: bool = False):
     if const_c:
         y_pred = pu_prediction(clf, X_train, s_train, X_test, c=c)
         c_estimate = None
@@ -49,15 +50,20 @@ def calculate_metrics(clf, X_train, s_train, X_test, y_test, c, oracle_pred, con
 
     if const_c:
         return pd.DataFrame({
-            'Metric': ['Approximation error (AE) for posterior', 'AUC'],
+            'Metric': ['Błąd aproksymacji (AE) prawdopodobieństwa a posteriori', 'AUC'],
             'Value': [approx_err, auc_score]
         })
     else:
-        c_err = c_error(c, c_estimate)
+        c_err = c_error(c_estimate, c)
+        y = np.concatenate([y_train, y_test])
+        alpha_err = alpha_error(clf.get_STD_alpha(), y)
 
         return pd.DataFrame({
-            'Metric': ['Approximation error (AE) for posterior', r'Label frequency error', 'AUC'],
-            'Value': [approx_err, c_err, auc_score]
+            'Metric': ['Błąd aproksymacji (AE) prawdopodobieństwa a posteriori',
+                       r'Błąd estymacji częstości etykietowania',
+                       r'Błąd estymacji prawdopodobieństwa a priori',
+                       'AUC'],
+            'Value': [approx_err, c_err, alpha_err, auc_score]
         })
 
 
@@ -86,12 +92,12 @@ def run_test(dataset_name, dataset, target_c, run_number):
     dfs = []
     for name in joint_classifiers:
         print(f'--- {dataset_name} ({name}): c = {target_c}, run {run_number + 1}/{total_runs} ---')
-        df = calculate_metrics(joint_classifiers[name], X_train, s_train, X_test, y_test, c, oracle_pred)
+        df = calculate_metrics(joint_classifiers[name], X_train, y_train, s_train, X_test, y_test, c, oracle_pred)
         df = df.assign(Dataset=dataset_name, Method=name, c=target_c, RunNumber=run_number, ConstC=False)
         dfs.append(df)
     for name in const_c_classifiers:
         print(f'--- {dataset_name} ({name}): c = {target_c}, run {run_number + 1}/{total_runs} (CONST c) ---')
-        df = calculate_metrics(const_c_classifiers[name], X_train, s_train, X_test, y_test, c, oracle_pred,
+        df = calculate_metrics(const_c_classifiers[name], X_train, y_train, s_train, X_test, y_test, c, oracle_pred,
                                const_c=True)
         df = df.assign(Dataset=dataset_name, Method=name, c=target_c, RunNumber=run_number, ConstC=True)
         dfs.append(df)
@@ -112,7 +118,7 @@ def plot_metrics(metrics_df):
             split_metric_dict = dict(tuple(split_const_c_dict[const_c].groupby('Metric')))
 
             for metric in split_metric_dict:
-                plt.figure()
+                plt.figure(figsize=(8, 6))
                 sns.set_theme()
                 ax = plt.gca()
 
@@ -125,10 +131,10 @@ def plot_metrics(metrics_df):
                     ax.plot(method_df.c, method_df.Value)
                     ax.scatter(method_df.c, method_df.Value)
 
-                const_c_string = f'known c' if const_c else f'estimated c'
+                const_c_string = f'znane c' if const_c else f'estymowane c'
 
                 plt.legend([name for name in split_method_dict])
-                plt.xlabel(r'Label frequency $c$')
+                plt.xlabel(r'Częstość etykietowania $c$')
                 plt.ylabel(metric)
                 plt.title(f'{dataset_name} - {metric} - {const_c_string}')
                 plt.savefig(os.path.join('plots',
@@ -139,8 +145,9 @@ def plot_metrics(metrics_df):
 
 def get_latex_table(metric, metric_pivot, rank_pivot):
     best_function = {
-        'Approximation error (AE) for posterior': np.min,
-        'Label frequency error': np.min,
+        'Błąd aproksymacji (AE) prawdopodobieństwa a posteriori': np.min,
+        r'Błąd estymacji częstości etykietowania': np.min,
+        r'Błąd estymacji prawdopodobieństwa a priori': np.min,
         'AUC': np.max
     }
 
@@ -193,8 +200,9 @@ def get_latex_table(metric, metric_pivot, rank_pivot):
 
 def create_rankings(metrics_df, oracle_metrics_df):
     is_metric_increasing = {
-        'Approximation error (AE) for posterior': True,
-        'Label frequency error': True,
+        'Błąd aproksymacji (AE) prawdopodobieństwa a posteriori': True,
+        r'Błąd estymacji częstości etykietowania': True,
+        r'Błąd estymacji prawdopodobieństwa a priori': True,
         'AUC': False
     }
 
@@ -249,7 +257,8 @@ if __name__ == '__main__':
     data = datasets.get_datasets()
 
     const_c_classifiers = {
-        'Naive': NaiveClassifier(),
+        'Naive': NaiveClassifier(TIcEEstimator()),
+        'Weighted': WeightedClassifier(TIcEEstimator()),
         'Joint': JointClassifier(),
         'CCCP': CccpClassifier(verbosity=1),
         'MM': MMClassifier(verbosity=1),
@@ -257,6 +266,10 @@ if __name__ == '__main__':
     }
 
     joint_classifiers = {
+        'Naive - TIcE': NaiveClassifier(TIcEEstimator()),
+        'Naive - EN': NaiveClassifier(ElkanNotoEstimator()),
+        'Weighted - TIcE': WeightedClassifier(TIcEEstimator()),
+        'Weighted - EN': WeightedClassifier(ElkanNotoEstimator()),
         'Joint': JointClassifier(),
         'CCCP': CccpClassifier(verbosity=1),
         'MM': MMClassifier(verbosity=1),

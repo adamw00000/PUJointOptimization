@@ -3,10 +3,10 @@ import scipy.optimize
 
 from optimization.__base_pu_classifier import BasePUClassifier
 from optimization.c_estimation import BaseCEstimator
-from optimization.functions import oracle_risk, oracle_risk_derivative, predict_proba
+from optimization.functions import weighted_risk, weighted_risk_derivative
 
 
-class NaiveClassifier(BasePUClassifier):
+class WeightedClassifier(BasePUClassifier):
     c_estimator: BaseCEstimator
 
     def __init__(self, c_estimator: BaseCEstimator):
@@ -24,18 +24,13 @@ class NaiveClassifier(BasePUClassifier):
             self.c_estimate = c
 
         res = scipy.optimize.minimize(
-            fun=oracle_risk,
+            fun=weighted_risk,
             x0=b_init,
             method='BFGS',
-            args=(X, s),
-            jac=oracle_risk_derivative
+            args=(X, s, self.c_estimate),
+            jac=weighted_risk_derivative
         )
 
         self.params = res.x
 
         return self
-
-    def predict_proba(self, X):
-        s_proba = predict_proba(X, self.params)
-        y_proba = s_proba / self.c_estimate
-        return y_proba
