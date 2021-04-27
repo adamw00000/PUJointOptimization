@@ -139,3 +139,13 @@ est.fit(X_train, s_train)
 from optimization.metrics import c_error, alpha_error
 print('c error:', c_error(est.c_estimate, c))
 print('alpha error:', alpha_error(est.get_STD_alpha(), y))
+
+# %%
+from optimization.c_estimation import ElkanNotoEstimator
+
+est = ElkanNotoEstimator()
+est.fit(X_train, s_train)
+
+from optimization.metrics import c_error, alpha_error
+print('c error:', c_error(est.c_estimate, c))
+print('alpha error:', alpha_error(est.get_STD_alpha(), y))

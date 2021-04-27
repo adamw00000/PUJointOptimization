@@ -36,8 +36,8 @@ class SplitOptimizationPUClassifier(BasePUClassifier):
             jac=cccp_risk_derivative_wrt_c,
             x0=c_estimate,
             args=(X, s, b_estimate),
-            method='TNC', # better?
-            # method='L-BFGS-B', # faster?
+            method='TNC',  # better?
+            # method='L-BFGS-B',  # faster?
             bounds=[(P_S_eq_1, 0.99999)],
             options={
                 # 'disp': True

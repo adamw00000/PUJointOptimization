@@ -1,3 +1,5 @@
+import typing
+
 import numpy as np
 import math
 import pandas as pd
@@ -9,6 +11,9 @@ from optimization.c_estimation.__base_c_estimator import BaseCEstimator
 
 
 class TIcEEstimator(BaseCEstimator):
+    c_estimates_by_iteration: typing.List[typing.List[float]]
+    time: float
+
     # * -d, --delta DELTA
     #                             Delta, default: using formula from paper.
     # * -k, --max-bepp MAX_BEPP
@@ -36,6 +41,8 @@ class TIcEEstimator(BaseCEstimator):
         self.minT = minT
 
     def fit(self, X, s, folds=None):
+        self.P_s_1 = float(np.mean(s == 1))
+
         if type(X) == pd.DataFrame:
             X = X.to_numpy()
 
@@ -46,11 +53,8 @@ class TIcEEstimator(BaseCEstimator):
         c_estimate, c_its_estimates = self.tice(X, labels, folds)
         ti = time.time() - ti
 
-        self.P_s_1 = float(np.mean(s == 1))
         self.c_estimate = c_estimate
         self.c_estimates_by_iteration = c_its_estimates
-        # self.alpha = alpha
-
         self.time = ti
 
         return c_estimate
