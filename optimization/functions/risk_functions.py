@@ -70,7 +70,7 @@ def weighted_risk(b, X, s, c):
     X = add_bias(X)
     probability = sigma(np.matmul(X, b))
 
-    # labeled_examples = np.where(s == 0)[0]
+    # labeled_examples = np.where(s == 1)[0]
     # neg_weight_labeled_samples = s[labeled_examples]
     # s_full = np.append(s, neg_weight_labeled_samples)
     #
@@ -80,6 +80,8 @@ def weighted_risk(b, X, s, c):
     #
     # neg_weight_labeled_probas = probability[labeled_examples]
     # probability_full = np.append(probability, neg_weight_labeled_probas)
+    #
+    # return my_log_loss(s_full, probability_full, sample_weight=weights)
 
     return my_log_loss_for_weighted(s, probability,
                                     w_pos_pos=1/c,
@@ -94,8 +96,7 @@ def weighted_risk_derivative(b, X, s, c):
 
     sig = sigma(np.matmul(X, b))
 
-    # multiplier = s / c + sig
-    multiplier = s / c - sig + 2 * s * sig
+    multiplier = s / c - sig
     partial_res = np.sum(X * multiplier.reshape(-1, 1), axis=0)
     return -partial_res / n
 
