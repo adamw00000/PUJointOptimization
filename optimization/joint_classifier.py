@@ -1,3 +1,4 @@
+import time
 import numpy as np
 import scipy.optimize
 import typing
@@ -8,7 +9,9 @@ from optimization.__base_pu_classifier import BasePUClassifier
 
 class JointClassifier(BasePUClassifier):
     def fit(self, X, s, c: float = None):
+        t = time.time()
         self.P_S_1 = np.mean(s == 1)
+
         if c is None:
             c_init = (1 + self.P_S_1) / 2
 
@@ -29,6 +32,8 @@ class JointClassifier(BasePUClassifier):
                 jac=joint_risk_derivative,
                 bounds=bounds
             )
+            function_evals = res.nfev
+            jacobian_evals = res.njev
 
             self.params = res.x[:-1]
             self.c_estimate = res.x[-1]
@@ -42,6 +47,11 @@ class JointClassifier(BasePUClassifier):
                 args=(X, s, c),
                 jac=joint_risk_derivative
             )
+            function_evals = res.nfev
+            jacobian_evals = res.njev
 
             self.params = res.x
             self.c_estimate = c
+
+        self.total_time = time.time() - t
+        self.evaluations = function_evals + jacobian_evals

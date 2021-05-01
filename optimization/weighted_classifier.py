@@ -1,3 +1,4 @@
+import time
 import numpy as np
 import scipy.optimize
 
@@ -13,8 +14,8 @@ class WeightedClassifier(BasePUClassifier):
         self.c_estimator = c_estimator
 
     def fit(self, X, s, c: float = None):
+        t = time.time()
         self.P_S_1 = float(np.mean(s == 1))
-
         # b_init = np.random.random(X.shape[1] + 1) / 100
         b_init = np.zeros(X.shape[1] + 1)
 
@@ -30,7 +31,9 @@ class WeightedClassifier(BasePUClassifier):
             args=(X, s, self.c_estimate),
             jac=weighted_risk_derivative
         )
+        self.evaluations = res.nfev + res.njev
 
         self.params = res.x
+        self.total_time = time.time() - t
 
         return self

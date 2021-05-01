@@ -50,8 +50,16 @@ def calculate_metrics(clf, X_train, y_train, s_train, X_test, y_test, c, oracle_
 
     if const_c:
         return pd.DataFrame({
-            'Metric': ['Błąd aproksymacji (AE) prawdopodobieństwa a posteriori', 'AUC'],
-            'Value': [approx_err, auc_score]
+            'Metric': ['Błąd aproksymacji (AE) prawdopodobieństwa a posteriori',
+                       'AUC',
+                       'Czas wykonania',
+                       'Iteracje metody',
+                       'Ewaluacje funkcji w trakcie optymalizacji'],
+            'Value': [approx_err,
+                      auc_score,
+                      clf.total_time,
+                      clf.iterations,
+                      clf.evaluations]
         })
     else:
         c_err = c_error(c_estimate, c)
@@ -62,8 +70,17 @@ def calculate_metrics(clf, X_train, y_train, s_train, X_test, y_test, c, oracle_
             'Metric': ['Błąd aproksymacji (AE) prawdopodobieństwa a posteriori',
                        r'Błąd estymacji częstości etykietowania',
                        r'Błąd estymacji prawdopodobieństwa a priori',
-                       'AUC'],
-            'Value': [approx_err, c_err, alpha_err, auc_score]
+                       'AUC',
+                       'Czas wykonania',
+                       'Iteracje metody',
+                       'Ewaluacje funkcji w trakcie optymalizacji'],
+            'Value': [approx_err,
+                      c_err,
+                      alpha_err,
+                      auc_score,
+                      clf.total_time,
+                      clf.iterations,
+                      clf.evaluations]
         })
 
 
@@ -148,7 +165,10 @@ def get_latex_table(metric, metric_pivot, rank_pivot):
         'Błąd aproksymacji (AE) prawdopodobieństwa a posteriori': np.min,
         r'Błąd estymacji częstości etykietowania': np.min,
         r'Błąd estymacji prawdopodobieństwa a priori': np.min,
-        'AUC': np.max
+        'AUC': np.max,
+        'Czas wykonania': np.min,
+        'Iteracje metody': np.min,
+        'Ewaluacje funkcji w trakcie optymalizacji': np.min,
     }
 
     metric_pivot = metric_pivot.reset_index()
@@ -203,7 +223,10 @@ def create_rankings(metrics_df, oracle_metrics_df):
         'Błąd aproksymacji (AE) prawdopodobieństwa a posteriori': True,
         r'Błąd estymacji częstości etykietowania': True,
         r'Błąd estymacji prawdopodobieństwa a priori': True,
-        'AUC': False
+        'AUC': False,
+        'Czas wykonania': True,
+        'Iteracje metody': True,
+        'Ewaluacje funkcji w trakcie optymalizacji': True,
     }
 
     for metric in metrics_df.Metric.unique():

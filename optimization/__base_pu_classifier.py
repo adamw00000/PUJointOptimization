@@ -10,6 +10,9 @@ class BasePUClassifier(ABC):
     _P_S_1: float
     _c_estimate: float
     _params: np.array
+    _total_time: float
+    _evaluations: int
+    _iterations: int = 1
 
     def set_params(self, params: np.array) -> None:
         self.params = params
@@ -61,5 +64,31 @@ class BasePUClassifier(ABC):
     @params.setter
     def params(self, value: np.array):
         self._params = value
+
+    @property
+    def total_time(self) -> float:
+        return self._total_time
+
+    @total_time.setter
+    def total_time(self, value: float):
+        self._total_time = value
+
+    @property
+    def evaluations(self) -> int:
+        return self._evaluations
+
+    @evaluations.setter
+    def evaluations(self, value: int):
+        self._evaluations = value
+
+    @property
+    def iterations(self) -> int:
+        return self._iterations
+
+    @iterations.setter
+    def iterations(self, value: int):
+        self._iterations = value
+
+
 
 

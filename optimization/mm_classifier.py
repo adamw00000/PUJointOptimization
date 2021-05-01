@@ -14,7 +14,9 @@ class MMClassifier(SplitOptimizationPUClassifier):
                  verbosity: int = 0):
         super().__init__('MM', tol=tol, max_iter=max_iter, max_inner_iter=mm_max_iter, verbosity=verbosity)
 
-    def _minimize_wrt_b(self, X, s, c, old_b_estimate) -> npt.ArrayLike:
+    def _minimize_wrt_b(self, X, s, c, old_b_estimate) -> (npt.ArrayLike, int, int):
+        n_evals = 0
+
         # b_estimate = old_b_estimate
         b_estimate = np.zeros_like(old_b_estimate)
 
@@ -29,6 +31,7 @@ class MMClassifier(SplitOptimizationPUClassifier):
             res = solver.solve()
 
             new_b_estimate = res.x + b_estimate
+            n_evals += res.info.iter
 
             if self.verbosity > 1:
                 print('Estimated b:', new_b_estimate)
@@ -38,4 +41,5 @@ class MMClassifier(SplitOptimizationPUClassifier):
                     print('MM converged, stopping...')
                 break
             b_estimate = new_b_estimate
-        return b_estimate
+
+        return b_estimate, n_evals, 0

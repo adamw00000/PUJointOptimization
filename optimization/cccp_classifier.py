@@ -14,7 +14,10 @@ class CccpClassifier(SplitOptimizationPUClassifier):
         super().__init__('CCCP', tol=tol, max_iter=max_iter, max_inner_iter=cccp_max_iter, verbosity=verbosity)
         self.cg_max_iter = cg_max_iter
 
-    def _minimize_wrt_b(self, X, s, c_estimate, old_b_estimate) -> npt.ArrayLike:
+    def _minimize_wrt_b(self, X, s, c_estimate, old_b_estimate) -> (npt.ArrayLike, int, int):
+        n_fevals = 0
+        n_jevals = 0
+
         # b_estimate = old_b_estimate
         b_estimate = np.zeros_like(old_b_estimate)
 
@@ -36,6 +39,9 @@ class CccpClassifier(SplitOptimizationPUClassifier):
             )
             new_b_estimate = res.x
 
+            n_fevals += res.nfev
+            n_jevals += res.njev
+
             if self.verbosity > 1:
                 print('Estimation success:', res.success, f'({res.nit} iterations)')
                 if not res.success:
@@ -48,4 +54,5 @@ class CccpClassifier(SplitOptimizationPUClassifier):
                     print('CCCP converged, stopping...')
                 break
             b_estimate = new_b_estimate
-        return b_estimate
+
+        return b_estimate, n_fevals, n_jevals

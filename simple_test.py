@@ -3,7 +3,7 @@ import datasets
 from data_preprocessing import create_s
 
 target_c = 0.5
-X, y = datasets.get_datasets()['vote']
+X, y = datasets.get_datasets()['spambase']
 s, c = create_s(y, target_c)
 
 from data_preprocessing import preprocess
@@ -40,6 +40,7 @@ clf.fit(X_train, s_train)
 y_proba = clf.predict_proba(X_test)
 y_pred = clf.predict(X_test)
 
+print(f'Stats - time: {clf.total_time}, iterations: {clf.iterations}, evaluations: {clf.evaluations}')
 b = clf.get_params()
 est_c = clf.c_estimate
 print('Estimated c:', est_c)
@@ -66,6 +67,7 @@ clf.fit(X_train, s_train)
 y_proba = clf.predict_proba(X_test)
 y_pred = clf.predict(X_test)
 
+print(f'Stats - time: {clf.total_time}, iterations: {clf.iterations}, evaluations: {clf.evaluations}')
 b = clf.get_params()
 est_c = clf.c_estimate
 print('Estimated c:', est_c)
@@ -91,6 +93,7 @@ clf.fit(X_train, s_train)
 y_proba = clf.predict_proba(X_test)
 y_pred = clf.predict(X_test)
 
+print(f'Stats - time: {clf.total_time}, iterations: {clf.iterations}, evaluations: {clf.evaluations}')
 b = clf.get_params()
 est_c = clf.c_estimate
 print('Estimated c:', est_c)
@@ -116,6 +119,7 @@ clf.fit(X_train, s_train)
 y_proba = clf.predict_proba(X_test)
 y_pred = clf.predict(X_test)
 
+print(f'Stats - time: {clf.total_time}, iterations: {clf.iterations}, evaluations: {clf.evaluations}')
 b = clf.get_params()
 risk = oracle_risk(b, X_test, y_test)
 print('Risk value:', risk)
@@ -138,6 +142,7 @@ clf.fit(X_train, s_train)
 y_proba = clf.predict_proba(X_test)
 y_pred = clf.predict(X_test)
 
+print(f'Stats - time: {clf.total_time}, iterations: {clf.iterations}, evaluations: {clf.evaluations}')
 b = clf.get_params()
 risk = oracle_risk(b, X_test, y_test)
 print('Risk value:', risk)
@@ -160,6 +165,7 @@ clf.fit(X_train, s_train)
 y_proba = clf.predict_proba(X_test)
 y_pred = clf.predict(X_test)
 
+print(f'Stats - time: {clf.total_time}, iterations: {clf.iterations}, evaluations: {clf.evaluations}')
 b = clf.get_params()
 risk = oracle_risk(b, X_test, y_test)
 print('Risk value:', risk)

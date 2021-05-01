@@ -41,7 +41,7 @@ class DccpClassifier(SplitOptimizationPUClassifier):
 
         return problem, b
 
-    def _minimize_wrt_b(self, X, s, c_estimate, old_b_estimate) -> npt.ArrayLike:
+    def _minimize_wrt_b(self, X, s, c_estimate, old_b_estimate) -> (npt.ArrayLike, int, int):
         problem, b = self.__build_problem(X, s, c_estimate, old_b_estimate)
 
         # print(problem.is_dcp(), dccp.is_dccp(problem))
@@ -50,4 +50,7 @@ class DccpClassifier(SplitOptimizationPUClassifier):
 
         print("DCCP problem status:", problem.status)
 
-        return b.value
+        # n_evals = problem.solver_stats().num_iters
+        n_evals = self.max_inner_iter
+
+        return b.value, n_evals, 0
