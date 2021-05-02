@@ -111,6 +111,20 @@ def joint_risk(params, X, s, exact_c=None):
         b = params
         c = exact_c
 
+    # ### ORIGINAL R IMPLEMENTATION START
+
+    # term1 = c * sigma(np.matmul(X, b))
+    # term2 = 1 - c * sigma(np.matmul(X, b))
+    #
+    # term1 = np.where(term1 < 0, 0, term1)
+    # term2 = np.where(term2 < 0, 0, term2)
+    #
+    # n = X.shape[0]
+    # res = -1/n * np.sum(s * np.log(term1) + (1 - s) * np.log(term2))
+    # return res
+
+    # ### ORIGINAL R IMPLEMENTATION END
+
     probability = c * sigma(np.matmul(X, b))
     return my_log_loss(s, probability)
 
@@ -127,6 +141,24 @@ def joint_risk_derivative(params, X, s, exact_c=None):
         c = exact_c
 
     sig = sigma(np.matmul(X, b))
+
+    # ### ORIGINAL R IMPLEMENTATION START
+
+    # var1 = sig * (1 - sig)
+    # sigma1 = sig
+    #
+    # a = var1 * ((s - c * sigma1) / (sigma1 * (1 - c * sigma1)))
+    #
+    # res = np.sum(X * a.reshape(-1, 1), axis=0)
+    #
+    # if exact_c is None:
+    #     gr_c1 = sum(-s / c + (s - 1) * sigma1 / (1 - c * sigma1))
+    #     res = np.append(res, gr_c1)
+    #
+    # return -res/n
+
+    # ### ORIGINAL R IMPLEMENTATION END
+
     multiplier = (1 - sig) * (s - c * sig) / (c * (1 - c * sig))
 
     partial_res = np.sum(X * multiplier.reshape(-1, 1), axis=0)
@@ -162,13 +194,9 @@ def cccp_risk_wrt_b(b, X, s, c, b_prev):
             warnings.simplefilter("ignore")
 
             v = np.where(
-                exb == 0,
-                s / c,  # exb -> 0
-                np.where(
-                    (exb > np.sqrt(sys.float_info.max)) | (np.isinf(exb)),
-                    (1 - s) * (1 - c) * X[:, j] / (1 - c),  # exb -> inf
-                    (1 - s) * (1 - c) * X[:, j] * exb / (1 + (1 - c) * exb)
-                )
+                (exb > np.sqrt(sys.float_info.max)) | (np.isinf(exb)),
+                (1 - s) * X[:, j],  # exb -> inf
+                (1 - s) * (1 - c) * X[:, j] * exb / (1 + (1 - c) * exb)
             )
 
         if np.sum(np.isnan(v)) > 0 or np.sum(np.isinf(v)) > 0:
@@ -204,13 +232,9 @@ def cccp_risk_derivative_wrt_b(b, X, s, c, b_prev):
             warnings.simplefilter("ignore")
 
             v = np.where(
-                exb == 0,
-                s / c,  # exb -> 0
-                np.where(
-                    (exb > np.sqrt(sys.float_info.max)) | (np.isinf(exb)),
-                    (1 - s) * (1 - c) * X[:, j] / (1 - c),  # exb -> inf
-                    (1 - s) * (1 - c) * X[:, j] * exb / (1 + (1 - c) * exb)
-                )
+                (exb > np.sqrt(sys.float_info.max)) | (np.isinf(exb)),
+                (1 - s) * X[:, j],  # exb -> inf
+                (1 - s) * (1 - c) * X[:, j] * exb / (1 + (1 - c) * exb)
             )
 
         if np.sum(np.isnan(v)) > 0 or np.sum(np.isinf(v)) > 0:
