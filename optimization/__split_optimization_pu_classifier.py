@@ -1,12 +1,13 @@
+import typing
 import time
 import numpy as np
 import numpy.typing as npt
 import scipy.optimize
 
 from abc import abstractmethod
+
 from optimization.__base_pu_classifier import BasePUClassifier
-from optimization.c_estimation.pure_alpha_estimator import PureAlphaEstimator
-from optimization.functions import cccp_risk_wrt_c, cccp_risk_derivative_wrt_c
+from optimization.functions import cccp_risk_wrt_c, cccp_risk_derivative_wrt_c, joint_risk
 
 
 class SplitOptimizationPUClassifier(BasePUClassifier):
@@ -14,19 +15,26 @@ class SplitOptimizationPUClassifier(BasePUClassifier):
     max_iter: int
     max_inner_iter: int
     verbosity: int
+    reset_params_each_iter: bool
 
     c_function_evals: int = 0
     c_jacobian_evals: int = 0
     b_function_evals: int = 0
     b_jacobian_evals: int = 0
 
+    param_history: typing.List[typing.List[float]]
+    risk_values: typing.List[float]
+    risk_values_no_inner: typing.List[float]
+
     def __init__(self, inner_method_name: str, tol: float, max_iter: int, max_inner_iter: int,
-                 verbosity: int):
+                 verbosity: int, get_info: bool, reset_params_each_iter: bool):
         self.inner_method_name = inner_method_name
         self.tol = tol
         self.max_iter = max_iter
         self.max_inner_iter = max_inner_iter
         self.verbosity = verbosity
+        self.get_info = get_info
+        self.reset_params_each_iter = reset_params_each_iter
 
     @abstractmethod
     def _minimize_wrt_b(self, X, s, c_estimate, old_b_estimate) -> (npt.ArrayLike, int, int):
@@ -57,6 +65,9 @@ class SplitOptimizationPUClassifier(BasePUClassifier):
         return res.x[0]
 
     def fit(self, X, s, c: float = None):
+        self.param_history = []
+        self.risk_values = []
+        self.risk_values_no_inner = []
         self.iterations = 0
 
         self.c_function_evals = 0
@@ -89,23 +100,32 @@ class SplitOptimizationPUClassifier(BasePUClassifier):
                     break
 
                 c_estimate = new_c_estimate
-                b_estimate, n_fevals, n_jevals = self._minimize_wrt_b(X, s, c_estimate, b_estimate)
+                b_estimate, n_fevals, n_jevals, convergence_info = self._minimize_wrt_b(X, s, c_estimate, b_estimate)
                 self.b_function_evals += n_fevals
                 self.b_jacobian_evals += n_jevals
 
-            b_estimate, n_fevals, n_jevals = self._minimize_wrt_b(X, s, c_estimate, b_estimate)
+                self.param_history += convergence_info['param_history']
+                self.risk_values += convergence_info['risk_values']
+
+            b_estimate, n_fevals, n_jevals, convergence_info = self._minimize_wrt_b(X, s, c_estimate, b_estimate)
             self.b_function_evals += n_fevals
             self.b_jacobian_evals += n_jevals
+
+            self.param_history += convergence_info['param_history']
+            self.risk_values += convergence_info['risk_values']
 
             self.params = b_estimate
             self.c_estimate = c_estimate
         else:
-            self.params, n_fevals, n_jevals = self._minimize_wrt_b(X, s, c, b_estimate)
+            self.params, n_fevals, n_jevals, convergence_info = self._minimize_wrt_b(X, s, c, b_estimate)
             self.c_estimate = c
 
             self.iterations = 1
             self.b_function_evals += n_fevals
             self.b_jacobian_evals += n_jevals
+
+            self.param_history += convergence_info['param_history']
+            self.risk_values += convergence_info['risk_values']
 
         self.total_time = time.time() - t
         self.evaluations = self.c_function_evals + self.c_jacobian_evals + self.b_function_evals + self.b_jacobian_evals
