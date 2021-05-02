@@ -38,7 +38,7 @@ for i, dataset in enumerate([datasets.gen_M1_dataset(), datasets.gen_M2_dataset(
 
         v = get_risk_values(clf, X_test, y_test, target_c)
         ax.plot(np.array(v[:100]) * -5000)
-        print(v[:100][-1] * -5000)
+        print('Joint:', v[:100][-1] * -5000)
 
         clf = CccpClassifier(verbosity=0, tol=1e-10, cccp_max_iter=20, max_iter=10, cg_max_iter=10,
                              get_info=True, reset_params_each_iter=False)
@@ -46,7 +46,7 @@ for i, dataset in enumerate([datasets.gen_M1_dataset(), datasets.gen_M2_dataset(
 
         v = get_risk_values(clf, X_test, y_test, target_c)
         ax.plot(np.array(v[:100]) * -5000)
-        print(v[:100][-1] * -5000)
+        print('CCCP:', v[:100][-1] * -5000)
 
         clf = MMClassifier(verbosity=0, tol=1e-10, mm_max_iter=20, max_iter=10, osqp_max_iter=10,
                            get_info=True, reset_params_each_iter=False)
@@ -54,7 +54,7 @@ for i, dataset in enumerate([datasets.gen_M1_dataset(), datasets.gen_M2_dataset(
 
         v = get_risk_values(clf, X_test, y_test, target_c)
         ax.plot((np.array(range(11))) * 10, np.array(v[:11]) * -5000)
-        print(v[:100][-1] * -5000)
+        print('MM:', v[:100][-1] * -5000)
 
         clf = DccpClassifier(tau=1, verbosity=0, tol=1e-10, dccp_max_iter=2, max_iter=10, mosek_max_iter=100,
                              get_info=True, reset_params_each_iter=False)
@@ -62,10 +62,10 @@ for i, dataset in enumerate([datasets.gen_M1_dataset(), datasets.gen_M2_dataset(
 
         v = get_risk_values(clf, X_test, y_test, target_c)
         ax.plot((np.array(range(11))) * 10, np.array(v[:11]) * -5000)
-        print(v[:100][-1] * -5000)
+        print('DCCP:', v[:100][-1] * -5000)
 
-        ax.legend(['Joint', 'CCCP', 'MM'])
-        # ax.legend(['Joint', 'CCCP', 'MM', 'DCCP'])
+        # ax.legend(['Joint', 'CCCP', 'MM'])
+        ax.legend(['Joint', 'CCCP', 'MM', 'DCCP'])
         ax.set_title(f'Model {i+1}, c: {target_c}')
 
 # for ax in axs.flat:
@@ -74,8 +74,8 @@ for i, dataset in enumerate([datasets.gen_M1_dataset(), datasets.gen_M2_dataset(
 if not os.path.exists('results/standalone_plots'):
     os.mkdir('results/standalone_plots')
 
-plt.title('results/standalone_plots/convergence_orig.png')
-plt.savefig('results/standalone_plots/convergence_orig.png', dpi=150)
+fig.suptitle('Zbieżność metod', fontsize=20)
+plt.savefig('results/standalone_plots/convergence.png', dpi=150)
 plt.show()
 
 # %%
