@@ -121,7 +121,7 @@ def run_test(dataset_name, dataset, target_c, run_number):
     return pd.concat(dfs), oracle_df
 
 
-def plot_metrics(metrics_df):
+def plot_metrics(metrics_df, marker_styles, draw_order):
     mean_metrics_df = metrics_df.groupby(['Dataset', 'ConstC', 'Method', 'c', 'Metric']) \
         .Value \
         .mean() \
@@ -142,15 +142,19 @@ def plot_metrics(metrics_df):
                 metric_df = split_metric_dict[metric]
                 split_method_dict = dict(tuple(metric_df.groupby('Method')))
 
-                for method in split_method_dict:
+                legend = []
+                for method in draw_order:
+                    if method not in split_method_dict:
+                        continue
+                    legend.append(method)
+
                     method_df = split_method_dict[method]
 
-                    ax.plot(method_df.c, method_df.Value)
-                    ax.scatter(method_df.c, method_df.Value)
+                    ax.plot(method_df.c, method_df.Value, **marker_styles[method])
 
                 const_c_string = f'znane c' if const_c else f'estymowane c'
 
-                plt.legend([name for name in split_method_dict])
+                plt.legend(legend)
                 plt.xlabel(r'Częstość etykietowania $c$')
                 plt.ylabel(metric)
                 plt.title(f'{dataset_name} - {metric} - {const_c_string}')
@@ -283,9 +287,9 @@ if __name__ == '__main__':
         'Naive': NaiveClassifier(TIcEEstimator()),
         'Weighted': WeightedClassifier(TIcEEstimator()),
         'Joint': JointClassifier(),
-        'CCCP': CccpClassifier(verbosity=1),
-        'MM': MMClassifier(verbosity=1),
-        # 'DCCP': DccpClassifier(tau=1, verbosity=1),
+        'CCCP': CccpClassifier(verbosity=1, tol=1e-3),
+        'MM': MMClassifier(verbosity=1, tol=1e-3),
+        # 'DCCP': DccpClassifier(tau=1, verbosity=1, tol=1e-3),
     }
 
     joint_classifiers = {
@@ -294,10 +298,68 @@ if __name__ == '__main__':
         'Weighted - TIcE': WeightedClassifier(TIcEEstimator()),
         'Weighted - EN': WeightedClassifier(ElkanNotoEstimator()),
         'Joint': JointClassifier(),
-        'CCCP': CccpClassifier(verbosity=1),
-        'MM': MMClassifier(verbosity=1),
-        # 'DCCP': DccpClassifier(tau=1, verbosity=1),
+        'CCCP': CccpClassifier(verbosity=1, tol=1e-3),
+        'MM': MMClassifier(verbosity=1, tol=1e-3),
+        # 'DCCP': DccpClassifier(tau=1, verbosity=1, tol=1e-3),
     }
+
+    marker_styles = {
+        'Naive - TIcE': {
+            'color': 'brown',
+            'marker':  'o',
+            'fillstyle': 'full'
+        },
+        'Naive - EN': {
+            'color': 'brown',
+            'marker':  'o',
+            'fillstyle': 'none'
+        },
+        'Weighted - TIcE': {
+            'color': 'gray',
+            'marker':  '^',
+            'fillstyle': 'full'
+        },
+        'Weighted - EN': {
+            'color': 'gray',
+            'marker':  '^',
+            'fillstyle': 'none'
+        },
+        'Joint': {
+            'color': 'black',
+            'marker':  's',
+            'fillstyle': 'none'
+        },
+        'CCCP': {
+            'color': 'red',
+            'marker':  'D',
+            'fillstyle': 'none'
+        },
+        'MM': {
+            'color': 'blue',
+            'marker':  'h',
+            'fillstyle': 'none'
+        },
+        'DCCP': {
+            'color': 'green',
+            'marker':  'X',
+            'fillstyle': 'none'
+        },
+    }
+    marker_styles['Weighted'] = marker_styles['Weighted - EN']
+    marker_styles['Naive'] = marker_styles['Naive - EN']
+
+    draw_order = [
+        'Naive',
+        'Naive - EN',
+        'Naive - TIcE',
+        'Weighted',
+        'Weighted - EN',
+        'Weighted - TIcE',
+        'Joint',
+        'DCCP',
+        'MM',
+        'CCCP',
+    ]
 
     total_runs = 100
     c_values = np.arange(0.1, 1, 0.1)
@@ -320,5 +382,5 @@ if __name__ == '__main__':
 
     metrics_df = pd.read_csv(os.path.join('csv', 'raw_results.csv'))
     oracle_df = pd.read_csv(os.path.join('csv', 'raw_oracle_results.csv'))
-    plot_metrics(metrics_df)
+    plot_metrics(metrics_df, marker_styles, draw_order)
     create_rankings(metrics_df, oracle_df)
