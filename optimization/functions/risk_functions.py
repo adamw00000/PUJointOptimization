@@ -185,28 +185,15 @@ def cccp_risk_wrt_b(b, X, s, c, b_prev):
     result += E_vex_part
     # print('Half CCCP risk value:', result)
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        exb = np.exp(np.matmul(X, b_prev))
-
-    def safe_v():
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-
-            v = np.where(
-                (exb > np.sqrt(sys.float_info.max)) | (np.isinf(exb)),
-                (1 - s) * X[:, j],  # exb -> inf
-                (1 - s) * (1 - c) * X[:, j] * exb / (1 + (1 - c) * exb)
-            )
-
-        if np.sum(np.isnan(v)) > 0 or np.sum(np.isinf(v)) > 0:
-            warnings.warn("NaNs/inf in result", RuntimeWarning)
-
-        return v
+    xb = np.matmul(X, b_prev)
 
     for j in range(len(b)):
         # v = (1 - s) * (1 - c) * X[:, j] * exb / (1 + (1 - c) * exb)
-        v = safe_v()
+
+        v = (1 - s) * (1 - c) * X[:, j] * \
+            np.exp(
+                xb - np.logaddexp(0, np.log(1 - c) + xb)  # log of: exb / (1 + (1 - c) * exb)
+            )
 
         partial_res = b[j] * np.sum(v)
         result += -partial_res / n
@@ -223,28 +210,16 @@ def cccp_risk_derivative_wrt_b(b, X, s, c, b_prev):
     E_vex_part = oracle_risk_derivative(b, X_orig, s)
     result = E_vex_part
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        exb = np.exp(np.matmul(X, b_prev))
-
-    def safe_v():
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-
-            v = np.where(
-                (exb > np.sqrt(sys.float_info.max)) | (np.isinf(exb)),
-                (1 - s) * X[:, j],  # exb -> inf
-                (1 - s) * (1 - c) * X[:, j] * exb / (1 + (1 - c) * exb)
-            )
-
-        if np.sum(np.isnan(v)) > 0 or np.sum(np.isinf(v)) > 0:
-            warnings.warn("NaNs/inf in result", RuntimeWarning)
-
-        return v
+    xb = np.matmul(X, b_prev)
 
     for j in range(len(b)):
         # v = (1 - s) * (1 - c) * X[:, j] * exb / (1 + (1 - c) * exb)
-        v = safe_v()
+
+        v = (1 - s) * (1 - c) * X[:, j] * \
+            np.exp(
+                xb - np.logaddexp(0, np.log(1 - c) + xb)  # log of: exb / (1 + (1 - c) * exb)
+            )
+
         partial_res = np.sum(v)
         result[j] += -partial_res / n
 
