@@ -37,32 +37,32 @@ for i, dataset in enumerate([datasets.gen_M1_dataset(), datasets.gen_M2_dataset(
         clf.fit(X_train, s_train)
 
         v = get_risk_values(clf, X_test, y_test, target_c)
-        ax.plot(np.array(v[:100]) * -5000)
-        print('Joint:', v[:100][-1] * -5000)
+        ax.plot(np.array(v[:100]) * -len(X_train))
+        print('Joint:', v[:100][-1] * -len(X_train))
 
         clf = CccpClassifier(verbosity=0, tol=1e-10, cccp_max_iter=20, max_iter=10, cg_max_iter=10,
                              get_info=True, reset_params_each_iter=False)
         clf.fit(X_train, s_train)
 
         v = get_risk_values(clf, X_test, y_test, target_c)
-        ax.plot(np.array(v[:100]) * -5000)
-        print('CCCP:', v[:100][-1] * -5000)
+        ax.plot(np.array(v[:100]) * -len(X_train))
+        print('CCCP:', v[:100][-1] * -len(X_train))
 
         clf = MMClassifier(verbosity=0, tol=1e-10, mm_max_iter=20, max_iter=10, osqp_max_iter=10,
                            get_info=True, reset_params_each_iter=False)
         clf.fit(X_train, s_train)
 
         v = get_risk_values(clf, X_test, y_test, target_c)
-        ax.plot((np.array(range(11))) * 10, np.array(v[:11]) * -5000)
-        print('MM:', v[:100][-1] * -5000)
+        ax.plot((np.array(range(11))) * 10, np.array(v[:11]) * -len(X_train))
+        print('MM:', v[:100][-1] * -len(X_train))
 
         clf = DccpClassifier(tau=1, verbosity=0, tol=1e-10, dccp_max_iter=2, max_iter=10, mosek_max_iter=100,
                              get_info=True, reset_params_each_iter=False)
         clf.fit(X_train, s_train)
 
         v = get_risk_values(clf, X_test, y_test, target_c)
-        ax.plot((np.array(range(11))) * 10, np.array(v[:11]) * -5000)
-        print('DCCP:', v[:100][-1] * -5000)
+        ax.plot((np.array(range(11))) * 10, np.array(v[:11]) * -len(X_train))
+        print('DCCP:', v[:100][-1] * -len(X_train))
 
         # ax.legend(['Joint', 'CCCP', 'MM'])
         ax.legend(['Joint', 'CCCP', 'MM', 'DCCP'])
