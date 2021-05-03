@@ -27,7 +27,7 @@ def read_names_file(filename):
 
 def get_datasets():
     names = [
-        # 'Adult',
+        'Adult',
         'BreastCancer',
         'credit-a',
         'credit-g',

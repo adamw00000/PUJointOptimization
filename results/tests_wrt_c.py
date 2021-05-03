@@ -12,8 +12,43 @@ from optimization import CccpClassifier, JointClassifier, OracleClassifier, Dccp
     NaiveClassifier, MMClassifier, WeightedClassifier
 from optimization.c_estimation import TIcEEstimator, ElkanNotoEstimator
 from optimization.metrics import approximation_error, c_error, auc, alpha_error
+from test_dicts import is_metric_increasing, marker_styles, draw_order, best_function
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
+
+used_datasets = [
+    # 'Adult',
+    'BreastCancer',
+    'credit-a',
+    'credit-g',
+    'diabetes',
+    'heart-c',
+    'spambase',
+    'vote',
+    'wdbc',
+]
+
+const_c_classifiers = {
+    # 'Naive': NaiveClassifier(TIcEEstimator()),
+    'Weighted': WeightedClassifier(TIcEEstimator()),
+    'Joint': JointClassifier(),
+    'CCCP': CccpClassifier(verbosity=1, tol=1e-3),
+    'MM': MMClassifier(verbosity=1, tol=1e-3),
+    'DCCP': DccpClassifier(tau=1, verbosity=1, tol=1e-3),
+}
+
+joint_classifiers = {
+    # 'Naive - TIcE': NaiveClassifier(TIcEEstimator()),
+    # 'Naive - EN': NaiveClassifier(ElkanNotoEstimator()),
+    'Weighted - TIcE': WeightedClassifier(TIcEEstimator()),
+    'Weighted - EN': WeightedClassifier(ElkanNotoEstimator()),
+    'Joint': JointClassifier(),
+    'CCCP': CccpClassifier(verbosity=1, tol=1e-3),
+    'MM': MMClassifier(verbosity=1, tol=1e-3),
+    'DCCP': DccpClassifier(tau=1, verbosity=1, tol=1e-3),
+}
+
+total_runs = 100
 
 
 def oracle_prediction(X_train, y_train, X_test):
@@ -165,16 +200,6 @@ def plot_metrics(metrics_df, marker_styles, draw_order):
 
 
 def get_latex_table(metric, metric_pivot, rank_pivot):
-    best_function = {
-        'Błąd aproksymacji (AE) prawdopodobieństwa a posteriori': np.min,
-        r'Błąd estymacji częstości etykietowania': np.min,
-        r'Błąd estymacji prawdopodobieństwa a priori': np.min,
-        'AUC': np.max,
-        'Czas wykonania': np.min,
-        'Iteracje metody': np.min,
-        'Ewaluacje funkcji w trakcie optymalizacji': np.min,
-    }
-
     metric_pivot = metric_pivot.reset_index()
     rank_pivot = rank_pivot.reset_index()
 
@@ -223,16 +248,6 @@ def get_latex_table(metric, metric_pivot, rank_pivot):
 
 
 def create_rankings(metrics_df, oracle_metrics_df):
-    is_metric_increasing = {
-        'Błąd aproksymacji (AE) prawdopodobieństwa a posteriori': True,
-        r'Błąd estymacji częstości etykietowania': True,
-        r'Błąd estymacji prawdopodobieństwa a priori': True,
-        'AUC': False,
-        'Czas wykonania': True,
-        'Iteracje metody': True,
-        'Ewaluacje funkcji w trakcie optymalizacji': True,
-    }
-
     for metric in metrics_df.Metric.unique():
         df = metrics_df.loc[metrics_df.Metric == metric]
         oracle_df = oracle_metrics_df.loc[oracle_metrics_df.Metric == metric]
@@ -282,86 +297,7 @@ if __name__ == '__main__':
         os.mkdir('latex')
 
     data = datasets.get_datasets()
-
-    const_c_classifiers = {
-        'Naive': NaiveClassifier(TIcEEstimator()),
-        'Weighted': WeightedClassifier(TIcEEstimator()),
-        'Joint': JointClassifier(),
-        'CCCP': CccpClassifier(verbosity=1, tol=1e-3),
-        'MM': MMClassifier(verbosity=1, tol=1e-3),
-        # 'DCCP': DccpClassifier(tau=1, verbosity=1, tol=1e-3),
-    }
-
-    joint_classifiers = {
-        'Naive - TIcE': NaiveClassifier(TIcEEstimator()),
-        'Naive - EN': NaiveClassifier(ElkanNotoEstimator()),
-        'Weighted - TIcE': WeightedClassifier(TIcEEstimator()),
-        'Weighted - EN': WeightedClassifier(ElkanNotoEstimator()),
-        'Joint': JointClassifier(),
-        'CCCP': CccpClassifier(verbosity=1, tol=1e-3),
-        'MM': MMClassifier(verbosity=1, tol=1e-3),
-        # 'DCCP': DccpClassifier(tau=1, verbosity=1, tol=1e-3),
-    }
-
-    marker_styles = {
-        'Naive - TIcE': {
-            'color': 'brown',
-            'marker':  'o',
-            'fillstyle': 'full'
-        },
-        'Naive - EN': {
-            'color': 'brown',
-            'marker':  'o',
-            'fillstyle': 'none'
-        },
-        'Weighted - TIcE': {
-            'color': 'gray',
-            'marker':  '^',
-            'fillstyle': 'full'
-        },
-        'Weighted - EN': {
-            'color': 'gray',
-            'marker':  '^',
-            'fillstyle': 'none'
-        },
-        'Joint': {
-            'color': 'black',
-            'marker':  's',
-            'fillstyle': 'none'
-        },
-        'CCCP': {
-            'color': 'red',
-            'marker':  'D',
-            'fillstyle': 'none'
-        },
-        'MM': {
-            'color': 'blue',
-            'marker':  'h',
-            'fillstyle': 'none'
-        },
-        'DCCP': {
-            'color': 'green',
-            'marker':  'X',
-            'fillstyle': 'none'
-        },
-    }
-    marker_styles['Weighted'] = marker_styles['Weighted - EN']
-    marker_styles['Naive'] = marker_styles['Naive - EN']
-
-    draw_order = [
-        'Naive',
-        'Naive - EN',
-        'Naive - TIcE',
-        'Weighted',
-        'Weighted - EN',
-        'Weighted - TIcE',
-        'Joint',
-        'DCCP',
-        'MM',
-        'CCCP',
-    ]
-
-    total_runs = 100
+    data = {x: data[x] for x in used_datasets}
     c_values = np.arange(0.1, 1, 0.1)
 
     num_cores = multiprocessing.cpu_count() - 1
