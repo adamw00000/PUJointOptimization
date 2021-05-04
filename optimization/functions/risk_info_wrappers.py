@@ -7,11 +7,14 @@ def joint_risk_with_info(params, X, s, info, exact_c=None):
 
     if exact_c is None:
         b = params[:-1]
+        c = params[-1]
     else:
         b = params
+        c = exact_c
 
     info['param_history'].append(b)
     info['risk_values'].append(res)
+    info['c_history'].append(c)
     return res
 
 

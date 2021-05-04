@@ -71,4 +71,5 @@ class CccpClassifier(SplitOptimizationPUClassifier):
         return b_estimate, n_fevals, n_jevals, {
             'risk_values': risk_values,
             'param_history': param_history,
+            'c_history': list(np.repeat(c_estimate, len(risk_values))),
         }

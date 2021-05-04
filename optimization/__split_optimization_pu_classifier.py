@@ -24,6 +24,7 @@ class SplitOptimizationPUClassifier(BasePUClassifier):
 
     param_history: typing.List[typing.List[float]]
     risk_values: typing.List[float]
+    c_history: typing.List[float]
     risk_values_no_inner: typing.List[float]
 
     def __init__(self, inner_method_name: str, tol: float, max_iter: int, max_inner_iter: int,
@@ -68,6 +69,8 @@ class SplitOptimizationPUClassifier(BasePUClassifier):
         self.param_history = []
         self.risk_values = []
         self.risk_values_no_inner = []
+        self.c_history = []
+
         self.iterations = 0
 
         self.c_function_evals = 0
@@ -106,6 +109,7 @@ class SplitOptimizationPUClassifier(BasePUClassifier):
 
                 self.param_history += convergence_info['param_history']
                 self.risk_values += convergence_info['risk_values']
+                self.c_history += convergence_info['c_history']
 
             b_estimate, n_fevals, n_jevals, convergence_info = self._minimize_wrt_b(X, s, c_estimate, b_estimate)
             self.b_function_evals += n_fevals
@@ -113,6 +117,7 @@ class SplitOptimizationPUClassifier(BasePUClassifier):
 
             self.param_history += convergence_info['param_history']
             self.risk_values += convergence_info['risk_values']
+            self.c_history += convergence_info['c_history']
 
             self.params = b_estimate
             self.c_estimate = c_estimate
@@ -126,6 +131,7 @@ class SplitOptimizationPUClassifier(BasePUClassifier):
 
             self.param_history += convergence_info['param_history']
             self.risk_values += convergence_info['risk_values']
+            self.c_history += convergence_info['c_history']
 
         self.total_time = time.time() - t
         self.evaluations = self.c_function_evals + self.c_jacobian_evals + self.b_function_evals + self.b_jacobian_evals

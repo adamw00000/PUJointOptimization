@@ -13,6 +13,7 @@ class JointClassifier(BasePUClassifier):
     max_iter: int
     get_info: bool
 
+    c_history: typing.List[float]
     risk_values: typing.List[float]
     param_history: typing.List[typing.List[float]]
     risk_values_no_inner: typing.List[float]
@@ -28,7 +29,8 @@ class JointClassifier(BasePUClassifier):
 
         self.risk_values = []
         self.param_history = []
-        convergence_info = {'param_history': [], 'risk_values': []}
+        self.c_history = []
+        convergence_info = {'param_history': [], 'risk_values': [], 'c_history': []}
 
         if c is None:
             c_init = (1 + self.P_S_1) / 2
@@ -82,6 +84,7 @@ class JointClassifier(BasePUClassifier):
         if self.get_info:
             self.risk_values = convergence_info['risk_values']
             self.param_history = convergence_info['param_history']
+            self.c_history = convergence_info['c_history']
             self.risk_values_no_inner = self.risk_values
 
         self.total_time = time.time() - t

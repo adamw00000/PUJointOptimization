@@ -66,4 +66,5 @@ class DccpClassifier(SplitOptimizationPUClassifier):
         return b.value, n_evals, 0, {
             'risk_values': [joint_risk(b.value, X, s, c_estimate)] if self.get_info else [],
             'param_history': [b.value] if self.get_info else [],
+            'c_history': [c_estimate] if self.get_info else [],
         }

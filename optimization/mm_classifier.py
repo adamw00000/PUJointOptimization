@@ -21,6 +21,7 @@ class MMClassifier(SplitOptimizationPUClassifier):
         n_evals = 0
         param_history = []
         risk_values = []
+        c_history = []
 
         if self.reset_params_each_iter:
             b_estimate = np.zeros_like(old_b_estimate)
@@ -46,6 +47,7 @@ class MMClassifier(SplitOptimizationPUClassifier):
 
             param_history.append(new_b_estimate)
             risk_values.append(joint_risk(new_b_estimate, X, s, c))
+            c_history.append(c)
 
             if self.verbosity > 1:
                 print('Estimated b:', new_b_estimate)
@@ -59,4 +61,5 @@ class MMClassifier(SplitOptimizationPUClassifier):
         return b_estimate, n_evals, 0, {
             'risk_values': risk_values,
             'param_history': param_history,
+            'c_history': c_history,
         }
