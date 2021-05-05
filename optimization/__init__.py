@@ -1,5 +1,6 @@
 from optimization.oracle_classifier import OracleClassifier
 from optimization.naive_classifier import NaiveClassifier
+from optimization.weighted_classifier import WeightedClassifier
 from optimization.joint_classifier import JointClassifier
 from optimization.cccp_classifier import CccpClassifier
 from optimization.dccp_classifier import DccpClassifier

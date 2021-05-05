@@ -1,18 +1,54 @@
 import os
+
+import cvxpy.error
+
 import datasets
 import multiprocessing
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 from joblib import Parallel, delayed
 from data_preprocessing import create_s, preprocess
 from optimization import CccpClassifier, JointClassifier, OracleClassifier, DccpClassifier, \
-    NaiveClassifier, MMClassifier
-from optimization.metrics import approximation_error, c_error, auc
+    NaiveClassifier, MMClassifier, WeightedClassifier
+from optimization.c_estimation import TIcEEstimator, ElkanNotoEstimator
+from optimization.metrics import approximation_error, c_error, auc, alpha_error
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
+
+used_datasets = [
+    # 'Adult',
+    'BreastCancer',  # done
+    'credit-a',  # done
+    'credit-g',  # done
+    'diabetes',  # done
+    'heart-c',  # done
+    'spambase',  # done
+    'vote',  # done
+    'wdbc',  # done
+]
+
+const_c_classifiers = {
+    # 'Naive': NaiveClassifier(TIcEEstimator()),
+    'Weighted': WeightedClassifier(TIcEEstimator()),
+    'Joint': JointClassifier(),
+    'CCCP': CccpClassifier(verbosity=1, tol=1e-3, max_iter=40),
+    'MM': MMClassifier(verbosity=1, tol=1e-3, max_iter=40),
+    'DCCP': DccpClassifier(tau=1, verbosity=1, tol=1e-3, max_iter=40),
+}
+
+joint_classifiers = {
+    # 'Naive - TIcE': NaiveClassifier(TIcEEstimator()),
+    # 'Naive - EN': NaiveClassifier(ElkanNotoEstimator()),
+    'Weighted - TIcE': WeightedClassifier(TIcEEstimator()),
+    'Weighted - EN': WeightedClassifier(ElkanNotoEstimator()),
+    'Joint': JointClassifier(),
+    'CCCP': CccpClassifier(verbosity=1, tol=1e-3, max_iter=40),
+    'MM': MMClassifier(verbosity=1, tol=1e-3, max_iter=40),
+    'DCCP': DccpClassifier(tau=1, verbosity=1, tol=1e-3, max_iter=40),
+}
+
+total_runs = 100
 
 
 def oracle_prediction(X_train, y_train, X_test):
@@ -37,7 +73,7 @@ def joint_prediction(clf, X_train, s_train, X_test):
     return y_proba, clf.c_estimate
 
 
-def calculate_metrics(clf, X_train, s_train, X_test, y_test, c, oracle_pred, const_c: bool = False):
+def calculate_metrics(clf, X_train, y_train, s_train, X_test, y_test, c, oracle_pred, const_c: bool = False):
     if const_c:
         y_pred = pu_prediction(clf, X_train, s_train, X_test, c=c)
         c_estimate = None
@@ -49,15 +85,37 @@ def calculate_metrics(clf, X_train, s_train, X_test, y_test, c, oracle_pred, con
 
     if const_c:
         return pd.DataFrame({
-            'Metric': ['Approximation error (AE) for posterior', 'AUC'],
-            'Value': [approx_err, auc_score]
+            'Metric': ['Błąd aproksymacji (AE) prawdopodobieństwa a posteriori',
+                       'AUC',
+                       'Czas wykonania',
+                       'Iteracje metody',
+                       'Ewaluacje funkcji w trakcie optymalizacji'],
+            'Value': [approx_err,
+                      auc_score,
+                      clf.total_time,
+                      clf.iterations,
+                      clf.evaluations]
         })
     else:
-        c_err = c_error(c, c_estimate)
+        c_err = c_error(c_estimate, c)
+        y = np.concatenate([y_train, y_test])
+        alpha_err = alpha_error(clf.get_STD_alpha(), y)
 
         return pd.DataFrame({
-            'Metric': ['Approximation error (AE) for posterior', r'Label frequency error', 'AUC'],
-            'Value': [approx_err, c_err, auc_score]
+            'Metric': ['Błąd aproksymacji (AE) prawdopodobieństwa a posteriori',
+                       r'Błąd estymacji częstości etykietowania',
+                       r'Błąd estymacji prawdopodobieństwa a priori',
+                       'AUC',
+                       'Czas wykonania',
+                       'Iteracje metody',
+                       'Ewaluacje funkcji w trakcie optymalizacji'],
+            'Value': [approx_err,
+                      c_err,
+                      alpha_err,
+                      auc_score,
+                      clf.total_time,
+                      clf.iterations,
+                      clf.evaluations]
         })
 
 
@@ -71,199 +129,56 @@ def get_oracle_metrics(y_test, oracle_pred):
 
 
 def run_test(dataset_name, dataset, target_c, run_number):
-    X, y = dataset
-    s, c = create_s(y, target_c)
-    X_train, X_test, y_train, y_test, s_train, s_test = preprocess(X, y, s, test_size=0.2)
+    try:
+        X, y = dataset
 
-    oracle_pred = oracle_prediction(X_train, y_train, X_test)
-    oracle_df = get_oracle_metrics(y_test, oracle_pred)
-    oracle_df = oracle_df.assign(Dataset=dataset_name, Method='Oracle', c=target_c)
-    oracle_df = pd.concat([
-        oracle_df.assign(ConstC=True),
-        oracle_df.assign(ConstC=False),
-    ])
+        s, c = create_s(y, target_c)
+        X_train, X_test, y_train, y_test, s_train, s_test = preprocess(X, y, s, test_size=0.2)
 
-    dfs = []
-    for name in joint_classifiers:
-        print(f'--- {dataset_name} ({name}): c = {target_c}, run {run_number + 1}/{total_runs} ---')
-        df = calculate_metrics(joint_classifiers[name], X_train, s_train, X_test, y_test, c, oracle_pred)
-        df = df.assign(Dataset=dataset_name, Method=name, c=target_c, RunNumber=run_number, ConstC=False)
-        dfs.append(df)
-    for name in const_c_classifiers:
-        print(f'--- {dataset_name} ({name}): c = {target_c}, run {run_number + 1}/{total_runs} (CONST c) ---')
-        df = calculate_metrics(const_c_classifiers[name], X_train, s_train, X_test, y_test, c, oracle_pred,
-                               const_c=True)
-        df = df.assign(Dataset=dataset_name, Method=name, c=target_c, RunNumber=run_number, ConstC=True)
-        dfs.append(df)
-    return pd.concat(dfs), oracle_df
+        oracle_pred = oracle_prediction(X_train, y_train, X_test)
+        oracle_df = get_oracle_metrics(y_test, oracle_pred)
+        oracle_df = oracle_df.assign(Dataset=dataset_name, Method='Oracle', c=target_c)
+        oracle_df = pd.concat([
+            oracle_df.assign(ConstC=True),
+            oracle_df.assign(ConstC=False),
+        ])
+        oracle_df.to_csv(f'detailed_results/{dataset_name}/oracle/'
+                         f'{dataset_name}_{str(target_c)[:3]}_{run_number}.csv')
 
+        dfs = []
+        for clf_name in joint_classifiers:
+            print(f'--- {dataset_name} ({clf_name}): c = {target_c}, run {run_number + 1}/{total_runs} ---')
+            df = calculate_metrics(joint_classifiers[clf_name], X_train, y_train, s_train, X_test, y_test, c, oracle_pred)
+            df = df.assign(Dataset=dataset_name, Method=clf_name, c=target_c, RunNumber=run_number, ConstC=False)
 
-def plot_metrics(metrics_df):
-    mean_metrics_df = metrics_df.groupby(['Dataset', 'ConstC', 'Method', 'c', 'Metric']) \
-        .Value \
-        .mean() \
-        .reset_index(drop=False)
+            df.to_csv(f'detailed_results/{dataset_name}/'
+                      f'{dataset_name}_{clf_name}_{str(target_c)[:3]}_{run_number}_{False}.csv')
+            dfs.append(df)
+        for clf_name in const_c_classifiers:
+            print(f'--- {dataset_name} ({clf_name}): c = {target_c}, run {run_number + 1}/{total_runs} (CONST c) ---')
+            df = calculate_metrics(const_c_classifiers[clf_name], X_train, y_train, s_train, X_test, y_test, c, oracle_pred,
+                                   const_c=True)
+            df = df.assign(Dataset=dataset_name, Method=clf_name, c=target_c, RunNumber=run_number, ConstC=True)
 
-    split_dataset_dict = dict(tuple(mean_metrics_df.groupby('Dataset')))
-    for dataset_name in split_dataset_dict:
-        split_const_c_dict = dict(tuple(split_dataset_dict[dataset_name].groupby('ConstC')))
-
-        for const_c in split_const_c_dict:
-            split_metric_dict = dict(tuple(split_const_c_dict[const_c].groupby('Metric')))
-
-            for metric in split_metric_dict:
-                plt.figure()
-                sns.set_theme()
-                ax = plt.gca()
-
-                metric_df = split_metric_dict[metric]
-                split_method_dict = dict(tuple(metric_df.groupby('Method')))
-
-                for method in split_method_dict:
-                    method_df = split_method_dict[method]
-
-                    ax.plot(method_df.c, method_df.Value)
-                    ax.scatter(method_df.c, method_df.Value)
-
-                const_c_string = f'known c' if const_c else f'estimated c'
-
-                plt.legend([name for name in split_method_dict])
-                plt.xlabel(r'Label frequency $c$')
-                plt.ylabel(metric)
-                plt.title(f'{dataset_name} - {metric} - {const_c_string}')
-                plt.savefig(os.path.join('plots',
-                                         f'{dataset_name} - {metric} - {const_c_string}.png'),
-                            dpi=150, bbox_inches='tight')
-                plt.show()
-
-
-def get_latex_table(metric, metric_pivot, rank_pivot):
-    best_function = {
-        'Approximation error (AE) for posterior': np.min,
-        'Label frequency error': np.min,
-        'AUC': np.max
-    }
-
-    metric_pivot = metric_pivot.reset_index()
-    rank_pivot = rank_pivot.reset_index()
-
-    for const_c in [True, False]:
-        latex_string = f"{'Dataset':16} "
-        for col in metric_pivot.columns:
-            if col in ['ConstC', 'index', 'Dataset']:
-                continue
-            if np.sum(np.isnan(metric_pivot.loc[metric_pivot.ConstC == const_c, col])):
-                continue
-            latex_string += f"& {col:14} "
-        latex_string += '\\\\\n'
-
-        for row in metric_pivot.loc[metric_pivot.ConstC == const_c].iterrows():
-            latex_string += f"{row[1]['Dataset']:16} "
-
-            values = [item[1] for (i, item) in enumerate(row[1].items())
-                             if i >= 2 and not np.isnan(item[1])]
-            non_oracle_values = [item[1] for (i, item) in enumerate(row[1].items())
-                             if i >= 2 and not np.isnan(item[1]) and not item[0] == 'Oracle']
-
-            for value in values:
-                text = f"{value}"
-                if value == best_function[metric](non_oracle_values):
-                    text = "\\textbf{" + text + "}"
-                latex_string += f"& {text:14} "
-            latex_string += '\\\\\n'
-
-        for row in rank_pivot.loc[rank_pivot.ConstC == const_c].iterrows():
-            latex_string += f"{'Rank':16} "
-            values = [item[1] for (i, item) in enumerate(row[1].items())
-                      if i >= 1 and not np.isnan(item[1])]
-            non_oracle_values = [item[1] for (i, item) in enumerate(row[1].items())
-                      if i >= 1 and not np.isnan(item[1]) and not item[0] == 'Oracle']
-            for value in values:
-                text = f"{value}"
-                if value == np.min(non_oracle_values):
-                    text = "\\textbf{" + text + "}"
-                latex_string += f"& {text:14} "
-            latex_string += '\\\\\n'
-
-        with open(os.path.join('latex',
-                               f'{metric}_latex_{"known" if const_c else "estimated"}_c.txt'),
-                  'w') as f:
-            f.write(latex_string)
-
-
-def create_rankings(metrics_df, oracle_metrics_df):
-    is_metric_increasing = {
-        'Approximation error (AE) for posterior': True,
-        'Label frequency error': True,
-        'AUC': False
-    }
-
-    for metric in metrics_df.Metric.unique():
-        df = metrics_df.loc[metrics_df.Metric == metric]
-        oracle_df = oracle_metrics_df.loc[oracle_metrics_df.Metric == metric]
-
-        mean_metrics_df = df.groupby(['Dataset', 'ConstC', 'Method']) \
-            .Value \
-            .mean() \
-            .reset_index(drop=False)
-        mean_oracle_metrics_df = oracle_df.groupby(['Dataset', 'ConstC', 'Method']) \
-            .Value \
-            .mean() \
-            .reset_index(drop=False)
-
-        mean_metrics_df = pd.concat([mean_oracle_metrics_df, mean_metrics_df])
-        mean_metrics_df.Value = mean_metrics_df.Value.round(3)
-
-        ranks = mean_metrics_df.groupby(['Dataset', 'ConstC'])\
-            .Value\
-            .rank(ascending=is_metric_increasing[metric])
-        ranked_mean_metrics_df = mean_metrics_df.assign(Rank=ranks)
-        mean_rank = ranked_mean_metrics_df\
-            .groupby(['ConstC', 'Method'])\
-            .Rank\
-            .mean()\
-            .reset_index()
-
-        metric_pivot = pd.pivot_table(mean_metrics_df, values='Value',
-                                      index=['ConstC', 'Dataset'],
-                                      columns=['Method'])\
-            .round(3)
-        rank_pivot = pd.pivot_table(mean_rank, values='Rank',
-                                    index=['ConstC'], columns=['Method'])\
-            .round(3)
-
-        metric_pivot.to_csv(os.path.join('csv', f'mean_metrics_by_dataset_{metric}.csv'))
-        rank_pivot.to_csv(os.path.join('csv', f'mean_ranks_{metric}.csv'))
-
-        get_latex_table(metric, metric_pivot, rank_pivot)
+            df.to_csv(f'detailed_results/{dataset_name}/'
+                      f'{dataset_name}_{clf_name}_{str(target_c)[:3]}_{run_number}_{True}.csv')
+            dfs.append(df)
+        return pd.concat(dfs), oracle_df
+    except cvxpy.error.SolverError:
+        run_test(dataset_name, dataset, target_c, run_number)
 
 
 if __name__ == '__main__':
-    if not os.path.exists('plots'):
-        os.mkdir('plots')
-    if not os.path.exists('csv'):
-        os.mkdir('csv')
-    if not os.path.exists('latex'):
-        os.mkdir('latex')
+    if not os.path.exists('detailed_results'):
+        os.mkdir('detailed_results')
+    for dataset in used_datasets:
+        if not os.path.exists(f'detailed_results/{dataset}'):
+            os.mkdir(f'detailed_results/{dataset}')
+        if not os.path.exists(f'detailed_results/{dataset}/oracle'):
+            os.mkdir(f'detailed_results/{dataset}/oracle')
 
     data = datasets.get_datasets()
-
-    const_c_classifiers = {
-        'Naive': NaiveClassifier(),
-        'Joint': JointClassifier(),
-        'CCCP': CccpClassifier(verbosity=1),
-        'MM': MMClassifier(verbosity=1),
-        # 'DCCP': DccpClassifier(tau=1, verbosity=1),
-    }
-
-    joint_classifiers = {
-        'Joint': JointClassifier(),
-        'CCCP': CccpClassifier(verbosity=1),
-        'MM': MMClassifier(verbosity=1),
-        # 'DCCP': DccpClassifier(tau=1, verbosity=1),
-    }
-
-    total_runs = 100
+    data = {x: data[x] for x in used_datasets}
     c_values = np.arange(0.1, 1, 0.1)
 
     num_cores = multiprocessing.cpu_count() - 1
@@ -277,12 +192,12 @@ if __name__ == '__main__':
     metrics_dfs = [res[0] for res in results]
     oracle_dfs = [res[1] for res in results]
 
-    metrics_df = pd.concat(metrics_dfs)
-    metrics_df.to_csv(os.path.join('csv', 'raw_results.csv'))
-    oracle_df = pd.concat(oracle_dfs)
-    oracle_df.to_csv(os.path.join('csv', 'raw_oracle_results.csv'))
-
-    metrics_df = pd.read_csv(os.path.join('csv', 'raw_results.csv'))
-    oracle_df = pd.read_csv(os.path.join('csv', 'raw_oracle_results.csv'))
-    plot_metrics(metrics_df)
-    create_rankings(metrics_df, oracle_df)
+    # metrics_df = pd.concat(metrics_dfs)
+    # metrics_df.to_csv(os.path.join('csv', 'raw_results.csv'))
+    # oracle_df = pd.concat(oracle_dfs)
+    # oracle_df.to_csv(os.path.join('csv', 'raw_oracle_results.csv'))
+    #
+    # metrics_df = pd.read_csv(os.path.join('csv', 'raw_results.csv'))
+    # oracle_df = pd.read_csv(os.path.join('csv', 'raw_oracle_results.csv'))
+    # plot_metrics(metrics_df, marker_styles, draw_order)
+    # create_rankings(metrics_df, oracle_df)

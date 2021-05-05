@@ -1,6 +1,7 @@
 import os
 import re
 from scipy.io import arff
+import numpy as np
 
 import pandas as pd
 
@@ -26,7 +27,7 @@ def read_names_file(filename):
 
 def get_datasets():
     names = [
-        # 'Adult',
+        'Adult',
         'BreastCancer',
         'credit-a',
         'credit-g',
@@ -47,4 +48,59 @@ def load_dataset(name):
     X = df.iloc[:, :-1]
     y = df.iloc[:, -1]
 
+    return X, y
+
+
+def gen_synthetic_dataset_M1(alpha, mu, N):
+    pos_size = round(alpha * N)
+    neg_size = N - pos_size
+    positives = np.random.normal(mu, 1, pos_size)
+    negatives = np.random.normal(0, 1, neg_size)
+
+    df = pd.DataFrame({
+        'X1': np.concatenate([positives, negatives]),
+    })
+    for i in range(2, 11):
+        df[f'X{i}'] = np.random.normal(0, 1, N)
+    df['y'] = np.concatenate([np.ones(pos_size), np.zeros(neg_size)])
+
+    df = df.sample(frac=1)
+
+    X = df.iloc[:, :-1]
+    y = df.iloc[:, -1]
+
+    return X, y
+
+
+def gen_synthetic_dataset_M2(alpha, mu, N):
+    pos_size = round(alpha * N)
+    easy_pos_size = round(0.75 * pos_size)
+    hard_pos_size = pos_size - easy_pos_size
+    neg_size = N - pos_size
+
+    easy_positives = np.random.normal(mu, 1, easy_pos_size)
+    hard_positives = np.random.normal(0, 1, hard_pos_size)
+    negatives = np.random.normal(0, 1, neg_size)
+
+    df = pd.DataFrame({
+        'X1': np.concatenate([easy_positives, hard_positives, negatives]),
+    })
+    for i in range(2, 11):
+        df[f'X{i}'] = np.random.normal(0, 1, N)
+    df['y'] = np.concatenate([np.ones(pos_size), np.zeros(neg_size)])
+
+    df = df.sample(frac=1)
+
+    X = df.iloc[:, :-1]
+    y = df.iloc[:, -1]
+
+    return X, y
+
+
+def gen_M1_dataset(alpha=0.5, mu=1, N=5000):
+    X, y = gen_synthetic_dataset_M1(alpha, mu, N)
+    return X, y
+
+def gen_M2_dataset(alpha=0.5, mu=1, N=5000):
+    X, y = gen_synthetic_dataset_M2(alpha, mu, N)
     return X, y
