@@ -26,8 +26,8 @@ def get_oracle_risk_values(clf, X_test, y_test, target_c):
 
 def draw_convergence_plot(risk_function, plot_title, filename):
     print(f'Drawing {plot_title}')
-    fig, axs = plt.subplots(2, 3, figsize=(16, 12))
     sns.set_theme()
+    fig, axs = plt.subplots(2, 3, figsize=(16, 12))
 
     for i, dataset in enumerate([datasets.gen_M1_dataset(), datasets.gen_M2_dataset()]):
         for j, target_c in enumerate([.3, .5, .7]):
