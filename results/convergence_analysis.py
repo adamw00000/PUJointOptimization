@@ -1,6 +1,6 @@
-# %%
 import os
 import matplotlib.pyplot as plt
+import seaborn as sns
 import numpy as np
 
 import datasets
@@ -24,9 +24,10 @@ def get_oracle_risk_values(clf, X_test, y_test, target_c):
     return v
 
 
-def draw(risk_function, plot_title, filename):
+def draw_convergence_plot(risk_function, plot_title, filename):
     print(f'Drawing {plot_title}')
     fig, axs = plt.subplots(2, 3, figsize=(16, 12))
+    sns.set_theme()
 
     for i, dataset in enumerate([datasets.gen_M1_dataset(), datasets.gen_M2_dataset()]):
         for j, target_c in enumerate([.3, .5, .7]):
@@ -76,12 +77,14 @@ def draw(risk_function, plot_title, filename):
     # for ax in axs.flat:
     #     ax.label_outer()
 
-    if not os.path.exists('results/standalone_plots'):
-        os.mkdir('results/standalone_plots')
+    if not os.path.exists('standalone_plots'):
+        os.mkdir('standalone_plots')
 
     fig.suptitle(plot_title, fontsize=20)
-    plt.savefig(f'results/standalone_plots/{filename}', dpi=300)
+    plt.savefig(f'standalone_plots/{filename}', dpi=300)
     plt.show()
 
-draw(get_risk_values, 'Zbieżność metod - ryzyko metody jednoczesnej podczas treningu', 'convergence_joint.png')
-draw(get_oracle_risk_values, 'Zbieżność metod - ryzyko wyroczni na zbiorze testowym', 'convergence_oracle.png')
+
+if __name__ == '__main__':
+    draw_convergence_plot(get_risk_values, 'Zbieżność metod - ryzyko metody jednoczesnej podczas treningu', 'convergence_joint.png')
+    draw_convergence_plot(get_oracle_risk_values, 'Zbieżność metod - ryzyko wyroczni na zbiorze testowym', 'convergence_oracle.png')

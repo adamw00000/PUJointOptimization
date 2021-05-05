@@ -6,8 +6,6 @@ import datasets
 import multiprocessing
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 from joblib import Parallel, delayed
 from data_preprocessing import create_s, preprocess
@@ -15,20 +13,19 @@ from optimization import CccpClassifier, JointClassifier, OracleClassifier, Dccp
     NaiveClassifier, MMClassifier, WeightedClassifier
 from optimization.c_estimation import TIcEEstimator, ElkanNotoEstimator
 from optimization.metrics import approximation_error, c_error, auc, alpha_error
-from results.test_dicts import is_metric_increasing, marker_styles, draw_order, best_function
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 used_datasets = [
-    'Adult',
-    'BreastCancer',
-    'credit-a',
-    'credit-g',
-    'diabetes',
-    'heart-c',
-    'spambase',
-    'vote',
-    'wdbc',
+    # 'Adult',
+    'BreastCancer',  # done
+    'credit-a',  # done
+    'credit-g',  # done
+    'diabetes',  # done
+    'heart-c',  # done
+    'spambase',  # done
+    'vote',  # done
+    'wdbc',  # done
 ]
 
 const_c_classifiers = {
@@ -171,146 +168,7 @@ def run_test(dataset_name, dataset, target_c, run_number):
         run_test(dataset_name, dataset, target_c, run_number)
 
 
-def plot_metrics(metrics_df, marker_styles, draw_order):
-    mean_metrics_df = metrics_df.groupby(['Dataset', 'ConstC', 'Method', 'c', 'Metric']) \
-        .Value \
-        .mean() \
-        .reset_index(drop=False)
-
-    split_dataset_dict = dict(tuple(mean_metrics_df.groupby('Dataset')))
-    for dataset_name in split_dataset_dict:
-        split_const_c_dict = dict(tuple(split_dataset_dict[dataset_name].groupby('ConstC')))
-
-        for const_c in split_const_c_dict:
-            split_metric_dict = dict(tuple(split_const_c_dict[const_c].groupby('Metric')))
-
-            for metric in split_metric_dict:
-                plt.figure(figsize=(8, 6))
-                sns.set_theme()
-                ax = plt.gca()
-
-                metric_df = split_metric_dict[metric]
-                split_method_dict = dict(tuple(metric_df.groupby('Method')))
-
-                legend = []
-                for method in draw_order:
-                    if method not in split_method_dict:
-                        continue
-                    legend.append(method)
-
-                    method_df = split_method_dict[method]
-
-                    ax.plot(method_df.c, method_df.Value, **marker_styles[method])
-
-                const_c_string = f'znane c' if const_c else f'estymowane c'
-
-                plt.legend(legend)
-                plt.xlabel(r'Częstość etykietowania $c$')
-                plt.ylabel(metric)
-                plt.title(f'{dataset_name} - {metric} - {const_c_string}')
-                plt.savefig(os.path.join('plots',
-                                         f'{dataset_name} - {metric} - {const_c_string}.png'),
-                            dpi=150, bbox_inches='tight')
-                plt.show()
-
-
-def get_latex_table(metric, metric_pivot, rank_pivot):
-    metric_pivot = metric_pivot.reset_index()
-    rank_pivot = rank_pivot.reset_index()
-
-    for const_c in [True, False]:
-        latex_string = f"{'Dataset':16} "
-        for col in metric_pivot.columns:
-            if col in ['ConstC', 'index', 'Dataset']:
-                continue
-            if np.sum(np.isnan(metric_pivot.loc[metric_pivot.ConstC == const_c, col])):
-                continue
-            latex_string += f"& {col:14} "
-        latex_string += '\\\\\n'
-
-        for row in metric_pivot.loc[metric_pivot.ConstC == const_c].iterrows():
-            latex_string += f"{row[1]['Dataset']:16} "
-
-            values = [item[1] for (i, item) in enumerate(row[1].items())
-                             if i >= 2 and not np.isnan(item[1])]
-            non_oracle_values = [item[1] for (i, item) in enumerate(row[1].items())
-                             if i >= 2 and not np.isnan(item[1]) and not item[0] == 'Oracle']
-
-            for value in values:
-                text = f"{value}"
-                if value == best_function[metric](non_oracle_values):
-                    text = "\\textbf{" + text + "}"
-                latex_string += f"& {text:14} "
-            latex_string += '\\\\\n'
-
-        for row in rank_pivot.loc[rank_pivot.ConstC == const_c].iterrows():
-            latex_string += f"{'Rank':16} "
-            values = [item[1] for (i, item) in enumerate(row[1].items())
-                      if i >= 1 and not np.isnan(item[1])]
-            non_oracle_values = [item[1] for (i, item) in enumerate(row[1].items())
-                      if i >= 1 and not np.isnan(item[1]) and not item[0] == 'Oracle']
-            for value in values:
-                text = f"{value}"
-                if value == np.min(non_oracle_values):
-                    text = "\\textbf{" + text + "}"
-                latex_string += f"& {text:14} "
-            latex_string += '\\\\\n'
-
-        with open(os.path.join('latex',
-                               f'{metric}_latex_{"known" if const_c else "estimated"}_c.txt'),
-                  'w') as f:
-            f.write(latex_string)
-
-
-def create_rankings(metrics_df, oracle_metrics_df):
-    for metric in metrics_df.Metric.unique():
-        df = metrics_df.loc[metrics_df.Metric == metric]
-        oracle_df = oracle_metrics_df.loc[oracle_metrics_df.Metric == metric]
-
-        mean_metrics_df = df.groupby(['Dataset', 'ConstC', 'Method']) \
-            .Value \
-            .mean() \
-            .reset_index(drop=False)
-        mean_oracle_metrics_df = oracle_df.groupby(['Dataset', 'ConstC', 'Method']) \
-            .Value \
-            .mean() \
-            .reset_index(drop=False)
-
-        mean_metrics_df = pd.concat([mean_oracle_metrics_df, mean_metrics_df])
-        mean_metrics_df.Value = mean_metrics_df.Value.round(3)
-
-        ranks = mean_metrics_df.groupby(['Dataset', 'ConstC'])\
-            .Value\
-            .rank(ascending=is_metric_increasing[metric])
-        ranked_mean_metrics_df = mean_metrics_df.assign(Rank=ranks)
-        mean_rank = ranked_mean_metrics_df\
-            .groupby(['ConstC', 'Method'])\
-            .Rank\
-            .mean()\
-            .reset_index()
-
-        metric_pivot = pd.pivot_table(mean_metrics_df, values='Value',
-                                      index=['ConstC', 'Dataset'],
-                                      columns=['Method'])\
-            .round(3)
-        rank_pivot = pd.pivot_table(mean_rank, values='Rank',
-                                    index=['ConstC'], columns=['Method'])\
-            .round(3)
-
-        metric_pivot.to_csv(os.path.join('csv', f'mean_metrics_by_dataset_{metric}.csv'))
-        rank_pivot.to_csv(os.path.join('csv', f'mean_ranks_{metric}.csv'))
-
-        get_latex_table(metric, metric_pivot, rank_pivot)
-
-
 if __name__ == '__main__':
-    if not os.path.exists('plots'):
-        os.mkdir('plots')
-    if not os.path.exists('csv'):
-        os.mkdir('csv')
-    if not os.path.exists('latex'):
-        os.mkdir('latex')
-
     if not os.path.exists('detailed_results'):
         os.mkdir('detailed_results')
     for dataset in used_datasets:

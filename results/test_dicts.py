@@ -11,6 +11,16 @@ is_metric_increasing = {
     'Ewaluacje funkcji w trakcie optymalizacji': True,
 }
 
+metric_ylim = {
+    'Błąd aproksymacji (AE) prawdopodobieństwa a posteriori': (0, 0.5),
+    r'Błąd estymacji częstości etykietowania': (0, 0.5),
+    r'Błąd estymacji prawdopodobieństwa a priori': (0, 0.5),
+    'AUC': (None, None),
+    'Czas wykonania': (None, None),
+    'Iteracje metody': (None, None),
+    'Ewaluacje funkcji w trakcie optymalizacji': (None, None),
+}
+
 best_function = {
     'Błąd aproksymacji (AE) prawdopodobieństwa a posteriori': np.min,
     r'Błąd estymacji częstości etykietowania': np.min,
