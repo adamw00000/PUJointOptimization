@@ -170,6 +170,50 @@ def joint_risk_derivative(params, X, s, exact_c=None):
     return -partial_res / n
 
 
+def cc_joint_risk(params, X, s, P_s_1, exact_alpha=None):
+    X = add_bias(X)
+
+    if exact_alpha is None:
+        b = params[:-1]
+        alpha = params[-1]
+    else:
+        b = params
+        alpha = exact_alpha
+
+    c = P_s_1 / (alpha * (1 - P_s_1) + P_s_1)
+    probability = c * sigma(np.matmul(X, b))
+    return my_log_loss(s, probability)
+
+
+def cc_joint_risk_derivative(params, X, s, P_s_1, exact_alpha=None):
+    X = add_bias(X)
+    n = X.shape[0]
+
+    if exact_alpha is None:
+        b = params[:-1]
+        alpha = params[-1]
+    else:
+        b = params
+        alpha = exact_alpha
+
+    sig = sigma(np.matmul(X, b))
+
+    c = P_s_1 / (alpha * (1 - P_s_1) + P_s_1)
+    multiplier = (1 - sig) * (s - c * sig) / (c * (1 - c * sig))
+
+    partial_res = np.sum(X * multiplier.reshape(-1, 1), axis=0)
+
+    if exact_alpha is None:
+        denom = alpha * (1 - P_s_1) + P_s_1
+        part_1 = -s * (1 - P_s_1) / denom
+        part_2 = (1 - s) * P_s_1 * (1 - P_s_1) * sig / ((denom * denom) * (1 - (sig * P_s_1) / denom))
+        # (P_s_1 - 1) * ((P_s_1 - 1) * s * alpha - P_s_1 * s)
+        derivative_wrt_c = np.sum(part_1 + part_2)
+        partial_res = np.append(partial_res, derivative_wrt_c)
+
+    return -partial_res / n
+
+
 def mm_q(b, X, s, c):
     n = X.shape[0]
     return n * joint_risk_derivative(b, X, s, exact_c=c)
