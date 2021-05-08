@@ -32,7 +32,7 @@ def draw_convergence_plot(risk_function, plot_title, filename):
     for i, dataset in enumerate([datasets.gen_M1_dataset(), datasets.gen_M2_dataset()]):
         for j, target_c in enumerate([.3, .5, .7]):
             print(f'Model {i+1}, c: {target_c}')
-            X, y = datasets.gen_M2_dataset()
+            X, y = dataset
             s, c = create_s(y, target_c)
 
             ax = axs[i, j]
@@ -86,5 +86,5 @@ def draw_convergence_plot(risk_function, plot_title, filename):
 
 
 if __name__ == '__main__':
-    draw_convergence_plot(get_risk_values, 'Zbieżność metod - ryzyko metody jednoczesnej podczas treningu', 'convergence_joint.png')
-    draw_convergence_plot(get_oracle_risk_values, 'Zbieżność metod - ryzyko wyroczni na zbiorze testowym', 'convergence_oracle.png')
+    draw_convergence_plot(get_risk_values, 'Zbieżność metod - log-wiarygodność podczas treningu', 'convergence_train.png')
+    draw_convergence_plot(get_oracle_risk_values, 'Zbieżność metod - log-wiarygodność na zbiorze testowym', 'convergence_test.png')

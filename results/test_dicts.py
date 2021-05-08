@@ -52,6 +52,16 @@ marker_styles = {
         'marker': '^',
         'fillstyle': 'none'
     },
+    'Ward - TIcE': {
+        'color': 'gray',
+        'marker': '^',
+        'fillstyle': 'full'
+    },
+    'Ward - EN': {
+        'color': 'gray',
+        'marker': '^',
+        'fillstyle': 'none'
+    },
     'Joint': {
         'color': 'black',
         'marker': 's',
@@ -74,6 +84,7 @@ marker_styles = {
     },
 }
 
+marker_styles['Ward'] = marker_styles['Ward - EN']
 marker_styles['Weighted'] = marker_styles['Weighted - EN']
 marker_styles['Naive'] = marker_styles['Naive - EN']
 
@@ -84,6 +95,9 @@ draw_order = [
     'Weighted',
     'Weighted - EN',
     'Weighted - TIcE',
+    'Ward',
+    'Ward - EN',
+    'Ward - TIcE',
     'Joint',
     'DCCP',
     'MM',

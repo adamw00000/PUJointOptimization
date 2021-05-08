@@ -41,7 +41,7 @@ def create_case_control_dataset(X, y, c):   # c - label_frequency
     positives = np.where(y == 1)[0]
     negatives = np.where(y == 0)[0]
 
-    new_labeled_samples = positives[np.random.random(len(positives)) < c]
+    new_labeled_samples = (np.random.random(len(positives)) < c)
     X_pos = X.iloc[positives, :]
     y_pos = y[positives]
     s_pos = np.zeros(len(positives))

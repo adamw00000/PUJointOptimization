@@ -6,6 +6,19 @@ import numpy as np
 
 from results.test_dicts import marker_styles, draw_order, metric_ylim, best_function, is_metric_increasing
 
+RESULTS_ROOT_DIR = 'detailed_results'
+ROOT_DIR = 'std_out'
+SCENARIO = ''
+# RESULTS_ROOT_DIR = 'detailed_results_cc'
+# ROOT_DIR = 'cc_out'
+# SCENARIO = ' (CC)'
+
+BOXPLOTS_ROOT_DIR = os.path.join(ROOT_DIR, 'boxplots')
+DETAILED_PLOTS_ROOT_DIR = os.path.join(ROOT_DIR, 'detailed_plots')
+LATEX_ROOT_DIR = os.path.join(ROOT_DIR, 'latex')
+CSV_ROOT_DIR = os.path.join(ROOT_DIR, 'csv')
+# PLOTS_ROOT_DIR = os.path.join(ROOT_DIR, 'plots')
+
 
 def read_results(root_dir):
     oracle_dfs = []
@@ -41,11 +54,12 @@ def plot_metrics(metrics_df, marker_styles, draw_order):
 
             sns.set_theme()
             fig, axs = plt.subplots(3, 3, figsize=(18, 18))
+            fig.subplots_adjust(hspace=0.4)
 
             const_c_string = f'znane c' if const_c else f'estymowane c'
 
             for k, dataset_name in enumerate(split_dataset_dict):
-                k = k + 1  # missing Adult dataset
+                # k = k + 1  # missing Adult dataset
 
                 i = k // 3
                 j = k % 3
@@ -72,11 +86,56 @@ def plot_metrics(metrics_df, marker_styles, draw_order):
             # for ax in axs.flat:
             #     ax.label_outer()
 
-            plt.suptitle(f'{metric}', fontsize=20, fontweight='bold')
-            plt.savefig(os.path.join('detailed_plots',
+            plt.suptitle(f'{metric}{SCENARIO}', fontsize=20, fontweight='bold')
+            plt.savefig(os.path.join(DETAILED_PLOTS_ROOT_DIR,
                                      f'{metric} - {const_c_string}.png'),
                         dpi=150, bbox_inches='tight')
-            plt.show()
+            # plt.show()
+            plt.close()
+
+
+def draw_boxplots(metrics_df):
+    split_metric_dict = dict(tuple(metrics_df.groupby('Metric')))
+    for metric in split_metric_dict:
+        split_const_c_dict = dict(tuple(split_metric_dict[metric].groupby('ConstC')))
+
+        for const_c in split_const_c_dict:
+            split_dataset_dict = dict(tuple(split_const_c_dict[const_c].groupby('Dataset')))
+
+            const_c_string = f'znane c' if const_c else f'estymowane c'
+
+            all_datasets = split_const_c_dict[const_c].Dataset.unique()
+            all_cs = split_const_c_dict[const_c].c.unique()
+
+            sns.set_theme()
+            fig, axs = plt.subplots(len(all_datasets), len(all_cs), figsize=(6 * len(all_cs), 6 * len(all_datasets)))
+            fig.subplots_adjust(hspace=0.4)
+
+            for i, dataset_name in enumerate(split_dataset_dict):
+
+                dataset_df = split_dataset_dict[dataset_name]
+                split_c_dict = dict(tuple(dataset_df.groupby('c')))
+
+                for j, c in enumerate(split_c_dict):
+                    ax = axs[i, j]
+
+                    c_df = split_c_dict[c]
+                    sns.boxplot(x='Method', y='Value', ax=ax, data=c_df)
+
+                    ax.set_xlabel(r'Metoda')
+                    ax.set_ylabel(metric)
+                    ax.set_ylim(*metric_ylim[metric])
+                    ax.set_title(f'{dataset_name}, c = {c} ({const_c_string})', fontsize=16, fontweight='bold')
+
+            # for ax in axs.flat:
+            #     ax.label_outer()
+
+            plt.suptitle(f'{metric}{SCENARIO}', fontsize=20, fontweight='bold')
+            plt.savefig(os.path.join(BOXPLOTS_ROOT_DIR,
+                                     f'{metric} - {const_c_string}.png'),
+                        dpi=150, bbox_inches='tight')
+            # plt.show()
+            plt.close()
 
 
 def get_latex_table(metric, metric_pivot, rank_pivot):
@@ -121,7 +180,7 @@ def get_latex_table(metric, metric_pivot, rank_pivot):
                 latex_string += f"& {text:14} "
             latex_string += '\\\\\n'
 
-        with open(os.path.join('latex',
+        with open(os.path.join(LATEX_ROOT_DIR,
                                f'{metric}_latex_{"known" if const_c else "estimated"}_c.txt'),
                   'w') as f:
             f.write(latex_string)
@@ -162,26 +221,30 @@ def create_rankings(metrics_df, oracle_metrics_df):
                                     index=['ConstC'], columns=['Method'])\
             .round(3)
 
-        metric_pivot.to_csv(os.path.join('csv', f'mean_metrics_by_dataset_{metric}.csv'))
-        rank_pivot.to_csv(os.path.join('csv', f'mean_ranks_{metric}.csv'))
+        metric_pivot.to_csv(os.path.join(CSV_ROOT_DIR, f'mean_metrics_by_dataset_{metric}.csv'))
+        rank_pivot.to_csv(os.path.join(CSV_ROOT_DIR, f'mean_ranks_{metric}.csv'))
 
         get_latex_table(metric, metric_pivot, rank_pivot)
 
 
 if __name__ == '__main__':
-    metrics_df, oracle_df = read_results('detailed_results')
+    metrics_df, oracle_df = read_results(RESULTS_ROOT_DIR)
 
     print(metrics_df)
     print(oracle_df)
 
-    if not os.path.exists('plots'):
-        os.mkdir('plots')
-    if not os.path.exists('csv'):
-        os.mkdir('csv')
-    if not os.path.exists('latex'):
-        os.mkdir('latex')
-    if not os.path.exists('detailed_plots'):
-        os.mkdir('detailed_plots')
+    if not os.path.exists(ROOT_DIR):
+        os.mkdir(ROOT_DIR)
+
+    if not os.path.exists(BOXPLOTS_ROOT_DIR):
+        os.mkdir(BOXPLOTS_ROOT_DIR)
+    if not os.path.exists(CSV_ROOT_DIR):
+        os.mkdir(CSV_ROOT_DIR)
+    if not os.path.exists(LATEX_ROOT_DIR):
+        os.mkdir(LATEX_ROOT_DIR)
+    if not os.path.exists(DETAILED_PLOTS_ROOT_DIR):
+        os.mkdir(DETAILED_PLOTS_ROOT_DIR)
 
     plot_metrics(metrics_df, marker_styles, draw_order)
     create_rankings(metrics_df, oracle_df)
+    draw_boxplots(metrics_df)

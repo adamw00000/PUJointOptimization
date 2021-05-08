@@ -8,29 +8,29 @@ import numpy as np
 import pandas as pd
 
 from joblib import Parallel, delayed
-from data_preprocessing import create_s, preprocess
+from data_preprocessing import create_s, preprocess, create_case_control_dataset
 from optimization import CccpClassifier, JointClassifier, OracleClassifier, DccpClassifier, \
     NaiveClassifier, MMClassifier, WeightedClassifier
 from optimization.c_estimation import TIcEEstimator, ElkanNotoEstimator
+from optimization.em_cc_classifier import EmCcClassifier
 from optimization.metrics import approximation_error, c_error, auc, alpha_error
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 used_datasets = [
-    # 'Adult',
-    'BreastCancer',  # done
-    'credit-a',  # done
-    'credit-g',  # done
-    'diabetes',  # done
-    'heart-c',  # done
-    'spambase',  # done
-    'vote',  # done
-    'wdbc',  # done
+    'Adult',
+    # 'BreastCancer',  # 25/100
+    # 'credit-a',  # 25/100
+    # 'credit-g',  # 25/100
+    # 'diabetes',  # 25/100
+    # 'heart-c',  # 100/100, 0.1-0.7
+    # 'spambase',  # 25/100
+    # 'vote',  # 25/100
+    # 'wdbc',  # 25/100
 ]
 
 const_c_classifiers = {
-    # 'Naive': NaiveClassifier(TIcEEstimator()),
-    'Weighted': WeightedClassifier(TIcEEstimator()),
+    'Ward': EmCcClassifier(TIcEEstimator()),
     'Joint': JointClassifier(),
     'CCCP': CccpClassifier(verbosity=1, tol=1e-4, max_iter=40),
     'MM': MMClassifier(verbosity=1, tol=1e-4, max_iter=40),
@@ -38,10 +38,8 @@ const_c_classifiers = {
 }
 
 joint_classifiers = {
-    # 'Naive - TIcE': NaiveClassifier(TIcEEstimator()),
-    # 'Naive - EN': NaiveClassifier(ElkanNotoEstimator()),
-    'Weighted - TIcE': WeightedClassifier(TIcEEstimator()),
-    'Weighted - EN': WeightedClassifier(ElkanNotoEstimator()),
+    'Ward - TIcE': EmCcClassifier(TIcEEstimator()),
+    'Ward - EN': EmCcClassifier(ElkanNotoEstimator()),
     'Joint': JointClassifier(),
     'CCCP': CccpClassifier(verbosity=1, tol=1e-4, max_iter=40),
     'MM': MMClassifier(verbosity=1, tol=1e-4, max_iter=40),
@@ -49,8 +47,8 @@ joint_classifiers = {
 }
 
 first_run_index = 0
-total_runs = 100
-RESULTS_ROOT_DIR = 'detailed_results'
+total_runs = 10
+RESULTS_ROOT_DIR = 'detailed_results_cc'
 
 
 def oracle_prediction(X_train, y_train, X_test):
@@ -101,7 +99,7 @@ def calculate_metrics(clf, X_train, y_train, s_train, X_test, y_test, c, oracle_
     else:
         c_err = c_error(c_estimate, c)
         y = np.concatenate([y_train, y_test])
-        alpha_err = alpha_error(clf.get_STD_alpha(), y)
+        alpha_err = alpha_error(clf.get_CC_alpha(), y)
 
         return pd.DataFrame({
             'Metric': ['Błąd aproksymacji (AE) prawdopodobieństwa a posteriori',
@@ -134,8 +132,8 @@ def run_test(dataset_name, dataset, target_c, run_number):
     try:
         X, y = dataset
 
-        s, c = create_s(y, target_c)
-        X_train, X_test, y_train, y_test, s_train, s_test = preprocess(X, y, s, test_size=0.2)
+        X_new, y_new, s, c = create_case_control_dataset(X, y, target_c)
+        X_train, X_test, y_train, y_test, s_train, s_test = preprocess(X_new, y_new, s, test_size=0.2)
 
         oracle_pred = oracle_prediction(X_train, y_train, X_test)
         oracle_df = get_oracle_metrics(y_test, oracle_pred)

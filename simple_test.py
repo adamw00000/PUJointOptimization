@@ -136,7 +136,7 @@ from optimization import DccpClassifier
 from optimization.functions import oracle_risk, accuracy
 from optimization.metrics import c_error, auc, approximation_error, alpha_error
 
-clf = DccpClassifier(tau=1, verbosity=1, dccp_max_iter=100, mosek_max_iter=100)
+clf = DccpClassifier(tol=1e-3, tau=1, verbosity=1, dccp_max_iter=100, mosek_max_iter=100, mosek_tol=1e-4)
 clf.fit(X_train, s_train)
 
 y_proba = clf.predict_proba(X_test)

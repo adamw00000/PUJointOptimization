@@ -1,9 +1,10 @@
 # %%
 import datasets
 from data_preprocessing import create_case_control_dataset
+from optimization.c_estimation import TIcEEstimator
 
-target_c = 0.5
-X, y = datasets.get_datasets()['spambase']
+target_c = 0.9
+X, y = datasets.get_datasets()['credit-a']
 
 X_new, y_new, s, c = create_case_control_dataset(X, y, target_c)
 
@@ -60,12 +61,14 @@ correct_est_alpha = (P_s_1 * (1 - c)) / (c * (1 - P_s_1))
 print(f'Alpha: {alpha}, estimated alpha: {est_alpha}, error: {np.abs(est_alpha - alpha)}, '
       f'correct estimate error: {np.abs(correct_est_alpha - alpha)}')
 
+print(clf.get_CC_alpha())
+
 # %%
 from optimization.em_cc_classifier import EmCcClassifier
 from optimization.functions import oracle_risk, accuracy
 from optimization.metrics import c_error, auc, approximation_error
 
-clf = EmCcClassifier()
+clf = EmCcClassifier(TIcEEstimator())
 clf.fit(X_train, s_train, c)
 
 y_proba = clf.predict_proba(X_test)

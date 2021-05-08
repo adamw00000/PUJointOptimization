@@ -11,14 +11,16 @@ from optimization.__split_optimization_pu_classifier import SplitOptimizationPUC
 class DccpClassifier(SplitOptimizationPUClassifier):
     tau: float
     mosek_max_iter: int
+    mosek_tol: float
 
     def __init__(self, tol: float = 1e-4, max_iter: int = 100, dccp_max_iter: int = 1000, tau: float = 1,
                  mosek_max_iter: int = 1000, verbosity: int = 0, get_info: bool = False,
-                 reset_params_each_iter: bool = False):
+                 reset_params_each_iter: bool = False, mosek_tol: float = 1e-4):
         super().__init__('DCCP', tol=tol, max_iter=max_iter, max_inner_iter=dccp_max_iter, verbosity=verbosity,
                          get_info=get_info, reset_params_each_iter=reset_params_each_iter)
         self.tau = tau
         self.mosek_max_iter = mosek_max_iter
+        self.mosek_tol = mosek_tol
 
     def __build_problem(self, X, s, c_estimate, old_b_estimate):
         X = add_bias(X)
@@ -54,7 +56,8 @@ class DccpClassifier(SplitOptimizationPUClassifier):
                                max_iter=self.max_inner_iter,
                                verbose=True if self.verbosity > 1 else False,
                                mosek_params={
-                                   'MSK_IPAR_INTPNT_MAX_ITERATIONS': self.mosek_max_iter
+                                   'MSK_IPAR_INTPNT_MAX_ITERATIONS': self.mosek_max_iter,
+                                   'MSK_DPAR_INTPNT_TOL_STEP_SIZE': self.mosek_tol,
                                })
 
         if self.verbosity > 0:
