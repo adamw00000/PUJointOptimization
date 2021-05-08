@@ -137,6 +137,12 @@ def run_test(dataset_name, dataset, target_c, run_number):
         s, c = create_s(y, target_c)
         X_train, X_test, y_train, y_test, s_train, s_test = preprocess(X, y, s, test_size=0.2)
 
+        if np.sum(y_test == 1) == 0 or np.sum(y_test == 0) == 0 \
+                or np.sum(y_train == 1) == 0 or np.sum(y_train == 0) == 0 \
+                or np.sum(s_test == 1) == 0 or np.sum(s_test == 0) == 0 \
+                or np.sum(s_train == 1) == 0 or np.sum(s_train == 0) == 0:
+            return run_test(dataset_name, dataset, target_c, run_number)
+
         oracle_pred = oracle_prediction(X_train, y_train, X_test)
         oracle_df = get_oracle_metrics(y_test, oracle_pred)
         oracle_df = oracle_df.assign(Dataset=dataset_name, Method='Oracle', c=target_c)
@@ -167,7 +173,7 @@ def run_test(dataset_name, dataset, target_c, run_number):
             dfs.append(df)
         return pd.concat(dfs), oracle_df
     except cvxpy.error.SolverError:
-        run_test(dataset_name, dataset, target_c, run_number)
+        return run_test(dataset_name, dataset, target_c, run_number)
 
 
 if __name__ == '__main__':
