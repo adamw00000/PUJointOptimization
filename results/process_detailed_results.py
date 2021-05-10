@@ -89,7 +89,7 @@ def plot_metrics(metrics_df, marker_styles, draw_order):
             plt.suptitle(f'{metric}{SCENARIO}', fontsize=20, fontweight='bold')
             plt.savefig(os.path.join(DETAILED_PLOTS_ROOT_DIR,
                                      f'{metric} - {const_c_string}.png'),
-                        dpi=150, bbox_inches='tight')
+                        dpi=300, bbox_inches='tight')
             # plt.show()
             plt.close()
 
@@ -133,7 +133,7 @@ def draw_boxplots(metrics_df):
             plt.suptitle(f'{metric}{SCENARIO}', fontsize=20, fontweight='bold')
             plt.savefig(os.path.join(BOXPLOTS_ROOT_DIR,
                                      f'{metric} - {const_c_string}.png'),
-                        dpi=150, bbox_inches='tight')
+                        dpi=300, bbox_inches='tight')
             # plt.show()
             plt.close()
 
