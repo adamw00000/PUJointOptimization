@@ -11,7 +11,7 @@ from data_preprocessing import preprocess
 X_train, X_test, y_train, y_test, s_train, s_test = preprocess(X, y, s, test_size=0.2)
 
 from optimization import OracleClassifier
-from optimization.functions import oracle_risk, accuracy
+from optimization.functions import oracle_risk, accuracy, add_bias
 from optimization.metrics import auc
 
 clf = OracleClassifier()
@@ -21,7 +21,7 @@ y_proba = clf.predict_proba(X_test)
 y_pred = clf.predict(X_test)
 
 b = clf.get_params()
-risk = oracle_risk(b, X_test, y_test)
+risk = oracle_risk(b, add_bias(X_test), y_test)
 print('Risk value:', risk)
 print('Accuracy:', accuracy(y_pred, y_test))
 print('AUC:', auc(y_test, y_pred))
@@ -45,7 +45,7 @@ b = clf.get_params()
 est_c = clf.c_estimate
 print('Estimated c:', est_c)
 
-risk = oracle_risk(b, X_test, y_test)
+risk = oracle_risk(b, add_bias(X_test), y_test)
 print('Risk value:', risk)
 print('Accuracy:', accuracy(y_pred, y_test))
 
@@ -72,7 +72,7 @@ b = clf.get_params()
 est_c = clf.c_estimate
 print('Estimated c:', est_c)
 
-risk = oracle_risk(b, X_test, y_test)
+risk = oracle_risk(b, add_bias(X_test), y_test)
 print('Risk value:', risk)
 print('Accuracy:', accuracy(y_pred, y_test))
 
@@ -98,7 +98,7 @@ b = clf.get_params()
 est_c = clf.c_estimate
 print('Estimated c:', est_c)
 
-risk = oracle_risk(b, X_test, y_test)
+risk = oracle_risk(b, add_bias(X_test), y_test)
 print('Risk value:', risk)
 print('Accuracy:', accuracy(y_pred, y_test))
 
@@ -113,7 +113,7 @@ from optimization import CccpClassifier
 from optimization.functions import oracle_risk, accuracy
 from optimization.metrics import c_error, auc, approximation_error, alpha_error
 
-clf = CccpClassifier(verbosity=1)
+clf = CccpClassifier(verbosity=1, max_iter=40)
 clf.fit(X_train, s_train)
 
 y_proba = clf.predict_proba(X_test)
@@ -121,7 +121,7 @@ y_pred = clf.predict(X_test)
 
 print(f'Stats - time: {clf.total_time}, iterations: {clf.iterations}, evaluations: {clf.evaluations}')
 b = clf.get_params()
-risk = oracle_risk(b, X_test, y_test)
+risk = oracle_risk(b, add_bias(X_test), y_test)
 print('Risk value:', risk)
 print('Accuracy:', accuracy(y_pred, y_test))
 
@@ -136,15 +136,15 @@ from optimization import DccpClassifier
 from optimization.functions import oracle_risk, accuracy
 from optimization.metrics import c_error, auc, approximation_error, alpha_error
 
-clf = DccpClassifier(tol=1e-3, tau=1, verbosity=1, dccp_max_iter=100, mosek_max_iter=100, mosek_tol=1e-4)
-clf.fit(X_train, s_train)
+clf = DccpClassifier(tol=1e-3, tau=1, verbosity=1, max_iter=100, dccp_max_iter=100, mosek_max_iter=100, mosek_tol=1e-4)
+clf.fit(X_train, s_train, c=c)
 
 y_proba = clf.predict_proba(X_test)
 y_pred = clf.predict(X_test)
 
 print(f'Stats - time: {clf.total_time}, iterations: {clf.iterations}, evaluations: {clf.evaluations}')
 b = clf.get_params()
-risk = oracle_risk(b, X_test, y_test)
+risk = oracle_risk(b, add_bias(X_test), y_test)
 print('Risk value:', risk)
 print('Accuracy:', accuracy(y_pred, y_test))
 
@@ -167,7 +167,7 @@ y_pred = clf.predict(X_test)
 
 print(f'Stats - time: {clf.total_time}, iterations: {clf.iterations}, evaluations: {clf.evaluations}')
 b = clf.get_params()
-risk = oracle_risk(b, X_test, y_test)
+risk = oracle_risk(b, add_bias(X_test), y_test)
 print('Risk value:', risk)
 print('Accuracy:', accuracy(y_pred, y_test))
 

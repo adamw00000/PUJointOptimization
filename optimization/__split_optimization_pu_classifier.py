@@ -7,7 +7,7 @@ import scipy.optimize
 from abc import abstractmethod
 
 from optimization.__base_pu_classifier import BasePUClassifier
-from optimization.functions import cccp_risk_wrt_c, cccp_risk_derivative_wrt_c, joint_risk
+from optimization.functions import cccp_risk_wrt_c, cccp_risk_derivative_wrt_c, joint_risk, add_bias
 
 
 class SplitOptimizationPUClassifier(BasePUClassifier):
@@ -16,6 +16,7 @@ class SplitOptimizationPUClassifier(BasePUClassifier):
     max_inner_iter: int
     verbosity: int
     reset_params_each_iter: bool
+    include_bias: bool
 
     c_function_evals: int = 0
     c_jacobian_evals: int = 0
@@ -28,7 +29,8 @@ class SplitOptimizationPUClassifier(BasePUClassifier):
     risk_values_no_inner: typing.List[float]
 
     def __init__(self, inner_method_name: str, tol: float, max_iter: int, max_inner_iter: int,
-                 verbosity: int, get_info: bool, reset_params_each_iter: bool):
+                 verbosity: int, get_info: bool, reset_params_each_iter: bool,
+                 include_bias: bool):
         self.inner_method_name = inner_method_name
         self.tol = tol
         self.max_iter = max_iter
@@ -36,6 +38,7 @@ class SplitOptimizationPUClassifier(BasePUClassifier):
         self.verbosity = verbosity
         self.get_info = get_info
         self.reset_params_each_iter = reset_params_each_iter
+        self.include_bias = include_bias
 
     @abstractmethod
     def _minimize_wrt_b(self, X, s, c_estimate, old_b_estimate) -> (npt.ArrayLike, int, int):
@@ -66,6 +69,9 @@ class SplitOptimizationPUClassifier(BasePUClassifier):
         return res.x[0]
 
     def fit(self, X, s, c: float = None):
+        if self.include_bias:
+            X = add_bias(X)
+
         self.param_history = []
         self.risk_values = []
         self.risk_values_no_inner = []
@@ -80,8 +86,8 @@ class SplitOptimizationPUClassifier(BasePUClassifier):
 
         t = time.time()
         self.P_S_1 = np.mean(s == 1)
-        # b_estimate = np.random.random(X.shape[1] + 1) / 100
-        b_estimate = np.zeros(X.shape[1] + 1)
+        # b_estimate = np.random.random(X.shape[1]) / 100
+        b_estimate = np.zeros(X.shape[1])
 
         if c is None:
             c_estimate = (1 + self.P_S_1) / 2

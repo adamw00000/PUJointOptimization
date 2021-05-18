@@ -1,5 +1,6 @@
-from optimization.functions import *
-from optimization.functions import cccp_risk_wrt_b
+import numpy as np
+from optimization.functions import joint_risk, joint_risk_derivative, cccp_risk_wrt_b, cccp_risk_derivative_wrt_b, \
+    sigma, add_bias
 
 
 def joint_risk_with_info(params, X, s, info, exact_c=None):
@@ -11,6 +12,11 @@ def joint_risk_with_info(params, X, s, info, exact_c=None):
     else:
         b = params
         c = exact_c
+
+    # X_bias = add_bias(X)
+    # sig = sigma(np.matmul(X_bias, b))
+    # print('Min proba:', np.min(sig), 'Max proba:', np.max(sig))
+    # print('LL:', res * -5000)
 
     info['param_history'].append(b)
     info['risk_values'].append(res)

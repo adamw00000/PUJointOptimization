@@ -3,7 +3,7 @@ import datasets
 from data_preprocessing import create_case_control_dataset
 from optimization.c_estimation import TIcEEstimator
 
-target_c = 0.9
+target_c = 0.1
 X, y = datasets.get_datasets()['credit-a']
 
 X_new, y_new, s, c = create_case_control_dataset(X, y, target_c)
@@ -29,6 +29,18 @@ print('Accuracy:', accuracy(y_pred, y_test))
 print('AUC:', auc(y_test, y_pred))
 
 y_proba_oracle = y_proba
+
+# %%
+import numpy as np
+
+n_p = np.sum(s == 1)
+n_u = np.sum(s == 0)
+
+alpha = np.mean(y_new == 0)
+# a = n_p / (n_p + alpha * n_u)
+a = (n_p + alpha * n_u) / (alpha * n_u)
+
+print(a, c)
 
 # %%
 from optimization import JointClassifier

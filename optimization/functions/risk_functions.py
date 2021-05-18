@@ -26,16 +26,12 @@ def my_log_loss(y_true, y_pred, *, eps=1e-15, sample_weight=None):
 
 
 def oracle_risk(b, X, y):
-    X = add_bias(X)
-
     probability = sigma(np.matmul(X, b))
     return my_log_loss(y, probability)
 
 
 def oracle_risk_derivative(b, X, y):
-    X = add_bias(X)
     n = X.shape[0]
-
     sig = sigma(np.matmul(X, b))
 
     multiplier = y - sig
@@ -67,7 +63,6 @@ def my_log_loss_for_weighted(y_true, y_pred, *, eps=1e-15, w_pos_pos, w_pos_neg,
 
 
 def weighted_risk(b, X, s, c):
-    X = add_bias(X)
     probability = sigma(np.matmul(X, b))
 
     # labeled_examples = np.where(s == 1)[0]
@@ -91,7 +86,6 @@ def weighted_risk(b, X, s, c):
 
 
 def weighted_risk_derivative(b, X, s, c):
-    X = add_bias(X)
     n = X.shape[0]
 
     sig = sigma(np.matmul(X, b))
@@ -102,8 +96,6 @@ def weighted_risk_derivative(b, X, s, c):
 
 
 def joint_risk(params, X, s, exact_c=None):
-    X = add_bias(X)
-
     if exact_c is None:
         b = params[:-1]
         c = params[-1]
@@ -130,7 +122,6 @@ def joint_risk(params, X, s, exact_c=None):
 
 
 def joint_risk_derivative(params, X, s, exact_c=None):
-    X = add_bias(X)
     n = X.shape[0]
 
     if exact_c is None:
@@ -171,8 +162,6 @@ def joint_risk_derivative(params, X, s, exact_c=None):
 
 
 def cc_joint_risk(params, X, s, P_s_1, exact_alpha=None):
-    X = add_bias(X)
-
     if exact_alpha is None:
         b = params[:-1]
         alpha = params[-1]
@@ -186,7 +175,6 @@ def cc_joint_risk(params, X, s, P_s_1, exact_alpha=None):
 
 
 def cc_joint_risk_derivative(params, X, s, P_s_1, exact_alpha=None):
-    X = add_bias(X)
     n = X.shape[0]
 
     if exact_alpha is None:
@@ -220,12 +208,10 @@ def mm_q(b, X, s, c):
 
 
 def cccp_risk_wrt_b(b, X, s, c, b_prev):
-    X_orig = X
-    X = add_bias(X)
     n = X.shape[0]
 
     result = 0
-    E_vex_part = oracle_risk(b, X_orig, s)
+    E_vex_part = oracle_risk(b, X, s)
     result += E_vex_part
     # print('Half CCCP risk value:', result)
 
@@ -247,11 +233,9 @@ def cccp_risk_wrt_b(b, X, s, c, b_prev):
 
 
 def cccp_risk_derivative_wrt_b(b, X, s, c, b_prev):
-    X_orig = X
-    X = add_bias(X)
     n = X.shape[0]
 
-    E_vex_part = oracle_risk_derivative(b, X_orig, s)
+    E_vex_part = oracle_risk_derivative(b, X, s)
     result = E_vex_part
 
     xb = np.matmul(X, b_prev)
@@ -271,14 +255,12 @@ def cccp_risk_derivative_wrt_b(b, X, s, c, b_prev):
 
 
 def cccp_risk_wrt_c(c, X, s, b):
-    X = add_bias(X)
     probability = c * sigma(np.matmul(X, b))
 
     return my_log_loss(s, probability)
 
 
 def cccp_risk_derivative_wrt_c(c, X, s, b):
-    X = add_bias(X)
     n = X.shape[0]
 
     sig = sigma(np.matmul(X, b))

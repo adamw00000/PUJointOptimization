@@ -15,15 +15,14 @@ class DccpClassifier(SplitOptimizationPUClassifier):
 
     def __init__(self, tol: float = 1e-4, max_iter: int = 100, dccp_max_iter: int = 1000, tau: float = 1,
                  mosek_max_iter: int = 1000, verbosity: int = 0, get_info: bool = False,
-                 reset_params_each_iter: bool = False, mosek_tol: float = 1e-4):
+                 reset_params_each_iter: bool = False, mosek_tol: float = 1e-4, include_bias: bool = True):
         super().__init__('DCCP', tol=tol, max_iter=max_iter, max_inner_iter=dccp_max_iter, verbosity=verbosity,
-                         get_info=get_info, reset_params_each_iter=reset_params_each_iter)
+                         get_info=get_info, reset_params_each_iter=reset_params_each_iter, include_bias=include_bias)
         self.tau = tau
         self.mosek_max_iter = mosek_max_iter
         self.mosek_tol = mosek_tol
 
     def __build_problem(self, X, s, c_estimate, old_b_estimate):
-        X = add_bias(X)
         n = X.shape[0]
         n_params = X.shape[1]
 

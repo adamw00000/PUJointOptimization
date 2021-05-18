@@ -9,12 +9,15 @@ from optimization.functions import cccp_risk_wrt_b, cccp_risk_derivative_wrt_b, 
 
 class CccpClassifier(SplitOptimizationPUClassifier):
     cg_max_iter: int
+    inner_tol: float
 
     def __init__(self, tol: float = 1e-4, max_iter: int = 100, cccp_max_iter: int = 1000, cg_max_iter: int = 1000,
-                 verbosity: int = 0, get_info: bool = False, reset_params_each_iter: bool = True):
+                 verbosity: int = 0, get_info: bool = False, reset_params_each_iter: bool = True,
+                 include_bias: bool = True, inner_tol: float = 1e-10):
         super().__init__('CCCP', tol=tol, max_iter=max_iter, max_inner_iter=cccp_max_iter, verbosity=verbosity,
-                         get_info=get_info, reset_params_each_iter=reset_params_each_iter)
+                         get_info=get_info, reset_params_each_iter=reset_params_each_iter, include_bias=include_bias)
         self.cg_max_iter = cg_max_iter
+        self.inner_tol = inner_tol
 
     def _minimize_wrt_b(self, X, s, c_estimate, old_b_estimate) -> (npt.ArrayLike, int, int):
         n_fevals = 0
@@ -62,7 +65,7 @@ class CccpClassifier(SplitOptimizationPUClassifier):
                     print('Message:', res.message)
                 print('Estimated b:', new_b_estimate)
 
-            if j > 0 and np.min(np.abs(new_b_estimate - b_estimate)) < self.tol:
+            if j > 0 and np.sum(np.abs(new_b_estimate - b_estimate)) < self.inner_tol:
                 if self.verbosity > 1:
                     print('CCCP converged, stopping...')
                 break

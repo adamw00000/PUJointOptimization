@@ -9,13 +9,15 @@ from optimization.functions import mm_q, add_bias, joint_risk
 
 class MMClassifier(SplitOptimizationPUClassifier):
     osqp_max_iter: int
+    inner_tol: float
 
     def __init__(self, tol: float = 1e-4, max_iter: int = 100, mm_max_iter: int = 1000,
                  osqp_max_iter: int = 4000, verbosity: int = 0, reset_params_each_iter: bool = True,
-                 get_info: bool = False):
+                 get_info: bool = False, include_bias: bool = True, inner_tol: float = 1e-10):
         super().__init__('MM', tol=tol, max_iter=max_iter, max_inner_iter=mm_max_iter, verbosity=verbosity,
-                         get_info=get_info, reset_params_each_iter=reset_params_each_iter)
+                         get_info=get_info, reset_params_each_iter=reset_params_each_iter, include_bias=include_bias)
         self.osqp_max_iter = osqp_max_iter
+        self.inner_tol = inner_tol
 
     def _minimize_wrt_b(self, X, s, c, old_b_estimate) -> (npt.ArrayLike, int, int):
         n_evals = 0
@@ -31,8 +33,7 @@ class MMClassifier(SplitOptimizationPUClassifier):
         param_history.append(b_estimate)
         risk_values.append(joint_risk(b_estimate, X, s, c))
 
-        X_with_bias = add_bias(X)
-        P = csc_matrix(np.matmul(X_with_bias.T, X_with_bias) / 4)
+        P = csc_matrix(np.matmul(X.T, X) / 4)
 
         for j in range(self.max_inner_iter):
             q = mm_q(b_estimate, X, s, c)
@@ -52,7 +53,7 @@ class MMClassifier(SplitOptimizationPUClassifier):
             if self.verbosity > 1:
                 print('Estimated b:', new_b_estimate)
 
-            if j > 0 and np.max(np.abs(new_b_estimate - b_estimate)) < self.tol:
+            if j > 0 and np.max(np.abs(new_b_estimate - b_estimate)) < self.inner_tol:
                 if self.verbosity > 1:
                     print('MM converged, stopping...')
                 break

@@ -4,7 +4,7 @@ import scipy.optimize
 import typing
 
 from optimization.functions import joint_risk, joint_risk_derivative, joint_risk_with_info, \
-    joint_risk_derivative_with_info
+    joint_risk_derivative_with_info, add_bias
 from optimization.__base_pu_classifier import BasePUClassifier
 
 
@@ -12,19 +12,23 @@ class JointClassifier(BasePUClassifier):
     tol: float
     max_iter: int
     get_info: bool
+    include_bias: bool
 
     c_history: typing.List[float]
     risk_values: typing.List[float]
     param_history: typing.List[typing.List[float]]
     risk_values_no_inner: typing.List[float]
 
-    def __init__(self, tol: float = 1e-4, max_iter: int = 1000, get_info=False):
+    def __init__(self, tol: float = 1e-4, max_iter: int = 1000, get_info=False, include_bias: bool = True):
         self.get_info = get_info
         self.tol = tol
         self.max_iter = max_iter
+        self.include_bias = include_bias
 
     def fit(self, X, s, c: float = None):
         t = time.time()
+        if self.include_bias:
+            X = add_bias(X)
         self.P_S_1 = np.mean(s == 1)
 
         self.risk_values = []
@@ -35,13 +39,13 @@ class JointClassifier(BasePUClassifier):
         if c is None:
             c_init = (1 + self.P_S_1) / 2
 
-            # b_init = np.random.random(X.shape[1] + 2) / 100
-            b_init = np.zeros(X.shape[1] + 2)
+            # b_init = np.random.random(X.shape[1] + 1) / 100
+            b_init = np.zeros(X.shape[1] + 1)
             b_init[-1] = c_init  # initial c
 
             bounds_type = typing.List[typing.Tuple[typing.Union[float, None], typing.Union[float, None]]]
 
-            bounds: bounds_type = [(None, None) for _ in range(X.shape[1] + 1)]
+            bounds: bounds_type = [(None, None) for _ in range(X.shape[1])]
             bounds.append((self.P_S_1, 0.99999))
 
             res = scipy.optimize.minimize(
@@ -62,7 +66,7 @@ class JointClassifier(BasePUClassifier):
             self.params = res.x[:-1]
             self.c_estimate = res.x[-1]
         else:
-            b_init = np.random.random(X.shape[1] + 1) / 100
+            b_init = np.random.random(X.shape[1]) / 100
 
             res = scipy.optimize.minimize(
                 fun=joint_risk_with_info if self.get_info else joint_risk,

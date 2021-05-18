@@ -2,8 +2,11 @@ import os
 import re
 from scipy.io import arff
 import numpy as np
+import scipy.stats
 
 import pandas as pd
+
+from optimization.functions import sigma, add_bias
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -101,6 +104,24 @@ def gen_M1_dataset(alpha=0.5, mu=1, N=5000):
     X, y = gen_synthetic_dataset_M1(alpha, mu, N)
     return X, y
 
+
 def gen_M2_dataset(alpha=0.5, mu=1, N=5000):
     X, y = gen_synthetic_dataset_M2(alpha, mu, N)
+    return X, y
+
+
+def gen_probit_dataset(N, b, n_features=3, include_bias: bool = False):
+    df = pd.DataFrame()
+    for i in range(n_features):
+        df[f'X{i+1}'] = np.random.normal(0, 1, N)
+
+    X = df.to_numpy()
+    if include_bias:
+        X = add_bias(X)
+    probit_probas = scipy.stats.norm.cdf(np.matmul(X, b))
+    df['y'] = np.where(probit_probas > 0.5, 1, 0)
+
+    X = df.iloc[:, :-1]
+    y = df.iloc[:, -1]
+
     return X, y
