@@ -17,15 +17,15 @@ from optimization.metrics import approximation_error, c_error, auc, alpha_error
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 used_datasets = [
-    # 'Adult',
-    'BreastCancer',  # done
-    'credit-a',  # done
-    'credit-g',  # done
-    'diabetes',  # done
-    'heart-c',  # done
-    'spambase',  # done
+    # 'Adult',  # 10/100
+    # 'BreastCancer',  # done
+    # 'credit-a',  # done
+    # 'credit-g',  # done
+    # 'diabetes',  # done
+    # 'heart-c',  # done
+    # 'spambase',  # done
     'vote',  # done
-    'wdbc',  # done
+    # 'wdbc',  # done
 ]
 
 const_c_classifiers = {
@@ -192,10 +192,10 @@ if __name__ == '__main__':
     num_cores = multiprocessing.cpu_count() - 1
     results = Parallel(n_jobs=num_cores)(delayed(run_test)(dataset_name, data[dataset_name],
                                                            c, first_run_index + run_number)
-                                         for dataset_name, c, run_number in zip(
-                                             np.repeat(np.repeat(list(data.keys()), total_runs), len(c_values)),
-                                             np.tile(np.repeat(c_values, total_runs), len(data)),
-                                             np.tile(np.tile(range(total_runs), len(c_values)), len(data))
+                                         for dataset_name, run_number, c in zip(
+                                             np.repeat(np.repeat(list(data.keys()), len(c_values)), total_runs),
+                                             np.tile(np.repeat(range(total_runs), len(c_values)), len(data)),
+                                             np.tile(np.tile(c_values, total_runs), len(data))
                                          ))
 
     metrics_dfs = [res[0] for res in results]

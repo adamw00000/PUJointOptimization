@@ -18,15 +18,16 @@ from optimization.metrics import approximation_error, c_error, auc, alpha_error
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 used_datasets = [
-    'Adult',
-    # 'BreastCancer',  # 25/100
-    # 'credit-a',  # 25/100
-    # 'credit-g',  # 25/100
-    # 'diabetes',  # 25/100
-    # 'heart-c',  # 100/100, 0.1-0.7
+    # 'Adult',  # 10/100
+    'BreastCancer',  # 25/100
+    'credit-a',  # 25/100
+    'credit-g',  # 25/100
+    'diabetes',  # 25/100
+    # 'heart-c',  # 100/100
     # 'spambase',  # 25/100
-    # 'vote',  # 25/100
-    # 'wdbc',  # 25/100
+    'vote',  # 25/100
+    'wdbc',  # 25/100
+    'spambase',  # 25/100
 ]
 
 const_c_classifiers = {
@@ -47,7 +48,7 @@ joint_classifiers = {
 }
 
 first_run_index = 0
-total_runs = 10
+total_runs = 100
 RESULTS_ROOT_DIR = 'detailed_results_cc'
 
 
@@ -190,10 +191,10 @@ if __name__ == '__main__':
     num_cores = multiprocessing.cpu_count() - 1
     results = Parallel(n_jobs=num_cores)(delayed(run_test)(dataset_name, data[dataset_name],
                                                            c, first_run_index + run_number)
-                                         for dataset_name, c, run_number in zip(
-                                             np.repeat(np.repeat(list(data.keys()), total_runs), len(c_values)),
-                                             np.tile(np.repeat(c_values, total_runs), len(data)),
-                                             np.tile(np.tile(range(total_runs), len(c_values)), len(data))
+                                         for dataset_name, run_number, c in zip(
+                                             np.repeat(np.repeat(list(data.keys()), len(c_values)), total_runs),
+                                             np.tile(np.repeat(range(total_runs), len(c_values)), len(data)),
+                                             np.tile(np.tile(c_values, total_runs), len(data))
                                          ))
 
     metrics_dfs = [res[0] for res in results]
