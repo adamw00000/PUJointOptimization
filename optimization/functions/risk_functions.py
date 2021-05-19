@@ -150,7 +150,7 @@ def joint_risk_derivative(params, X, s, exact_c=None):
 
     # ### ORIGINAL R IMPLEMENTATION END
 
-    multiplier = (1 - sig) * (s - c * sig) / (c * (1 - c * sig))
+    multiplier = (1 - sig) * (s - c * sig) / (1 - c * sig)
 
     partial_res = np.sum(X * multiplier.reshape(-1, 1), axis=0)
 
