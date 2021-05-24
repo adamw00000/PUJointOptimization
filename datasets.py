@@ -54,6 +54,21 @@ def load_dataset(name):
     return X, y
 
 
+def get_dataset_stats():
+    datasets = get_datasets()
+    stats = []
+    for dataset_name in datasets:
+        X, y = datasets[dataset_name]
+        stats.append({
+            'Nazwa': dataset_name,
+            'Liczba próbek': X.shape[0],
+            'Liczba cech': X.shape[1],
+            '\\alpha': np.round(np.mean(y == 1), 2),
+        })
+
+    return pd.DataFrame.from_records(stats)
+
+
 def gen_synthetic_dataset_M1(alpha, mu, N):
     pos_size = round(alpha * N)
     neg_size = N - pos_size
