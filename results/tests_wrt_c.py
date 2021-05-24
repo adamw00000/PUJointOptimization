@@ -10,29 +10,36 @@ import pandas as pd
 from joblib import Parallel, delayed
 from data_preprocessing import create_s, preprocess
 from optimization import CccpClassifier, JointClassifier, OracleClassifier, DccpClassifier, \
-    NaiveClassifier, MMClassifier, WeightedClassifier
+    NaiveClassifier, MMClassifier, WeightedClassifier, SimpleSplitClassifier
 from optimization.c_estimation import TIcEEstimator, ElkanNotoEstimator
 from optimization.metrics import approximation_error, c_error, auc, alpha_error
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 used_datasets = [
-    # 'Adult',  # 10/100
+    'Adult',
     # 'BreastCancer',  # done
     # 'credit-a',  # done
     # 'credit-g',  # done
     # 'diabetes',  # done
     # 'heart-c',  # done
     # 'spambase',  # done
-    'vote',  # done
+    # 'vote',  # done
     # 'wdbc',  # done
 ]
+
+first_run_index = 0
+total_runs = 25
+# first_run_index = 40
+# total_runs = 60
+RESULTS_ROOT_DIR = 'detailed_results'
 
 const_c_classifiers = {
     # 'Naive': NaiveClassifier(TIcEEstimator()),
     'Weighted': WeightedClassifier(TIcEEstimator()),
     'Joint': JointClassifier(),
     'CCCP': CccpClassifier(verbosity=1, tol=1e-4, max_iter=40),
+    'Simple split': SimpleSplitClassifier(verbosity=1, tol=1e-4, max_iter=40),
     'MM': MMClassifier(verbosity=1, tol=1e-4, max_iter=40),
     'DCCP': DccpClassifier(tau=1, verbosity=1, tol=1e-3, max_iter=40),
 }
@@ -44,13 +51,10 @@ joint_classifiers = {
     'Weighted - EN': WeightedClassifier(ElkanNotoEstimator()),
     'Joint': JointClassifier(),
     'CCCP': CccpClassifier(verbosity=1, tol=1e-4, max_iter=40),
+    'Simple split': SimpleSplitClassifier(verbosity=1, tol=1e-4, max_iter=40),
     'MM': MMClassifier(verbosity=1, tol=1e-4, max_iter=40),
     'DCCP': DccpClassifier(tau=1, verbosity=1, tol=1e-3, max_iter=40),
 }
-
-first_run_index = 0
-total_runs = 100
-RESULTS_ROOT_DIR = 'detailed_results'
 
 
 def oracle_prediction(X_train, y_train, X_test):
@@ -155,7 +159,7 @@ def run_test(dataset_name, dataset, target_c, run_number):
 
         dfs = []
         for clf_name in joint_classifiers:
-            print(f'--- {dataset_name} ({clf_name}): c = {target_c}, run {run_number + 1}/{total_runs} ---')
+            print(f'--- {dataset_name} ({clf_name}): c = {target_c}, run {run_number + 1}/{total_runs + first_run_index} ---')
             df = calculate_metrics(joint_classifiers[clf_name], X_train, y_train, s_train, X_test, y_test, c, oracle_pred)
             df = df.assign(Dataset=dataset_name, Method=clf_name, c=target_c, RunNumber=run_number, ConstC=False)
 
@@ -163,7 +167,7 @@ def run_test(dataset_name, dataset, target_c, run_number):
                                    f'{dataset_name}_{clf_name}_{np.round(target_c, 1)}_{run_number}_{False}.csv'))
             dfs.append(df)
         for clf_name in const_c_classifiers:
-            print(f'--- {dataset_name} ({clf_name}): c = {target_c}, run {run_number + 1}/{total_runs} (CONST c) ---')
+            print(f'--- {dataset_name} ({clf_name}): c = {target_c}, run {run_number + 1}/{total_runs + first_run_index} (CONST c) ---')
             df = calculate_metrics(const_c_classifiers[clf_name], X_train, y_train, s_train, X_test, y_test, c, oracle_pred,
                                    const_c=True)
             df = df.assign(Dataset=dataset_name, Method=clf_name, c=target_c, RunNumber=run_number, ConstC=True)

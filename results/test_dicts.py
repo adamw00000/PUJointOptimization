@@ -1,5 +1,7 @@
 import numpy as np
+import seaborn as sns
 
+palette = sns.color_palette()
 
 is_metric_increasing = {
     'Błąd aproksymacji (AE) prawdopodobieństwa a posteriori': True,
@@ -67,19 +69,24 @@ marker_styles = {
         'marker': 's',
         'fillstyle': 'none'
     },
-    'CCCP': {
-        'color': 'red',
-        'marker': 'D',
-        'fillstyle': 'none'
-    },
     'MM': {
-        'color': 'blue',
+        'color': palette[0],
         'marker': 'h',
         'fillstyle': 'none'
     },
+    'Simple split': {
+        'color': palette[1],
+        'marker': '*',
+        'fillstyle': 'none'
+    },
     'DCCP': {
-        'color': 'green',
+        'color': palette[2],
         'marker': 'X',
+        'fillstyle': 'none'
+    },
+    'CCCP': {
+        'color': palette[3],
+        'marker': 'D',
         'fillstyle': 'none'
     },
 }
@@ -99,6 +106,7 @@ draw_order = [
     'Ward - EN',
     'Ward - TIcE',
     'Joint',
+    'Simple split',
     'DCCP',
     'MM',
     'CCCP',
