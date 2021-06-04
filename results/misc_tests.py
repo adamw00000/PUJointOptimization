@@ -110,7 +110,7 @@ def E_cave(b, X, s, c):
     n = X.shape[0]
     return -1/n * np.sum(f1 + f3)
 
-v = np.linspace(0, 10, 1000)
+v = np.linspace(-100, 100, 1000)
 
 res_oracle = []
 res_oracle_true = []
@@ -157,8 +157,13 @@ plt.show()
 oracle_risk([100], X_train, y_train)
 
 # %%
+import numpy as np
 import scipy.stats
 import matplotlib.pyplot as plt
+import seaborn as sns
+
+sns.set_theme()
+plt.figure(figsize=(8, 6))
 
 l = np.linspace(-5, 5, 1000)
 plt.plot(l, scipy.stats.norm.cdf(l))
@@ -166,12 +171,24 @@ plt.plot(l, scipy.stats.norm.cdf(l))
 p = np.linspace(-5, 5, 50)
 plt.scatter(p, np.where(p > 0, 1, 0), c='r')
 
-plt.savefig('orig.png')
+plt.legend(['Rozkład probitowy', 'Pobrane próbki'])
+
+plt.ylabel('Prawdopodobieństwo przynależności do klasy dodatniej')
+plt.title('Dane dla modelu probitowego')
+plt.xlabel('X')
+plt.savefig(r'results\standalone_plots\probit_orig.svg', bbox_inches='tight')
 plt.show()
+plt.close()
 
 # %%
+import numpy as np
 import scipy.stats
 import matplotlib.pyplot as plt
+import seaborn as sns
+from optimization.functions import accuracy, joint_risk, oracle_risk, sigma, add_bias
+
+sns.set_theme()
+plt.figure(figsize=(8, 6))
 
 l = np.linspace(-5, 5, 1000)
 plt.plot(l, sigma(300*l))
@@ -179,8 +196,14 @@ plt.plot(l, sigma(300*l))
 p = np.linspace(-5, 5, 50)
 plt.scatter(p, np.where(p > 0, 1, 0), c='r')
 
-plt.savefig('best_fit.png')
+plt.legend(['Dopasowany model logistyczny', 'Próbki z rozkładu probitowego'])
+
+plt.ylabel('Prawdopodobieństwo przynależności do klasy dodatniej')
+plt.title('Model probitowy - dopasowanie')
+plt.xlabel('X')
+plt.savefig(r'results\standalone_plots\probit_best_fit.svg', bbox_inches='tight')
 plt.show()
+plt.close()
 
 # %%
 def joint_risk_second_derivative(params, X, s, exact_c=None):

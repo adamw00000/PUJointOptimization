@@ -1,7 +1,7 @@
 import numpy as np
 import seaborn as sns
 
-palette = sns.color_palette()
+palette = sns.color_palette('colorblind')
 
 is_metric_increasing = {
     'Błąd aproksymacji (AE) prawdopodobieństwa a posteriori': True,
@@ -21,6 +21,16 @@ metric_ylim = {
     'Czas wykonania': (None, None),
     'Iteracje metody': (None, None),
     'Ewaluacje funkcji w trakcie optymalizacji': (None, None),
+}
+
+metric_short_name = {
+    'Błąd aproksymacji (AE) prawdopodobieństwa a posteriori': 'AE',
+    r'Błąd estymacji częstości etykietowania': 'LFE',
+    r'Błąd estymacji prawdopodobieństwa a priori': 'PPE',
+    'AUC': 'AUC',
+    'Czas wykonania': 'time',
+    'Iteracje metody': 'it',
+    'Ewaluacje funkcji w trakcie optymalizacji': 'ev',
 }
 
 best_function = {
@@ -89,10 +99,17 @@ marker_styles = {
         'marker': 'D',
         'fillstyle': 'none'
     },
+    'Oracle': {
+        'color': palette[4],
+        'marker': None,
+        'fillstyle': 'none'
+    },
 }
 
 marker_styles['Ward'] = marker_styles['Ward - EN']
 marker_styles['Weighted'] = marker_styles['Weighted - EN']
+marker_styles['EN'] = marker_styles['Weighted - EN']
+marker_styles['TIcE'] = marker_styles['Weighted - TIcE']
 marker_styles['Naive'] = marker_styles['Naive - EN']
 
 draw_order = [
@@ -102,6 +119,10 @@ draw_order = [
     'Weighted',
     'Weighted - EN',
     'Weighted - TIcE',
+    'Weighted (EN)',
+    'Weighted (TIcE)',
+    'EN',
+    'TIcE',
     'Ward',
     'Ward - EN',
     'Ward - TIcE',
@@ -110,4 +131,5 @@ draw_order = [
     'DCCP',
     'MM',
     'CCCP',
+    'Oracle'
 ]

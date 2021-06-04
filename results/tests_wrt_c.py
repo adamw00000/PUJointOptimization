@@ -149,7 +149,7 @@ def run_test(dataset_name, dataset, target_c, run_number):
 
         oracle_pred = oracle_prediction(X_train, y_train, X_test)
         oracle_df = get_oracle_metrics(y_test, oracle_pred)
-        oracle_df = oracle_df.assign(Dataset=dataset_name, Method='Oracle', c=target_c)
+        oracle_df = oracle_df.assign(Dataset=dataset_name, Method='Oracle', c=target_c, RunNumber=run_number)
         oracle_df = pd.concat([
             oracle_df.assign(ConstC=True),
             oracle_df.assign(ConstC=False),

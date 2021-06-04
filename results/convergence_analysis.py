@@ -7,7 +7,7 @@ import datasets
 from data_preprocessing import preprocess, create_s
 
 from optimization import JointClassifier, CccpClassifier, MMClassifier, DccpClassifier
-from optimization.functions import oracle_risk, joint_risk
+from optimization.functions import oracle_risk, joint_risk, add_bias
 
 
 def get_risk_values(clf, X_test, y_test, target_c):
@@ -18,7 +18,7 @@ def get_oracle_risk_values(clf, X_test, y_test, target_c):
     v = []
 
     for b, c in zip(clf.param_history, clf.c_history):
-        v.append(oracle_risk(b, X_test, y_test))
+        v.append(oracle_risk(b, add_bias(X_test), y_test))
         # v.append(joint_risk(b, X_test, y_test, c))
 
     return v
@@ -39,10 +39,11 @@ def draw_convergence_plot(risk_function, plot_title, filename):
 
             X_train, X_test, y_train, y_test, s_train, s_test = preprocess(X, y, s, test_size=0.2)
 
-            clf = JointClassifier(tol=1e-10, max_iter=100, get_info=True)
+            clf = JointClassifier(tol=1e-10, max_iter=1000, get_info=True)
             clf.fit(X_train, s_train)
 
             v = risk_function(clf, X_test, y_test, target_c)
+            v = np.concatenate([v, np.repeat(v[-1], 1000 - len(v))])
             ax.plot(np.array(v[:100]) * -5000)
             print('Joint:', v[:100][-1] * -5000)
 
@@ -51,27 +52,27 @@ def draw_convergence_plot(risk_function, plot_title, filename):
             clf.fit(X_train, s_train)
 
             v = risk_function(clf, X_test, y_test, target_c)
-            ax.plot(np.array(v[:100]) * -5000)
-            print('CCCP:', v[:100][-1] * -5000)
+            ax.plot(np.array(v[:1000]) * -5000)
+            print('CCCP:', v[:1000][-1] * -5000)
 
             clf = MMClassifier(verbosity=0, tol=1e-10, mm_max_iter=20, max_iter=10, osqp_max_iter=10,
                                get_info=True, reset_params_each_iter=False)
             clf.fit(X_train, s_train)
 
             v = risk_function(clf, X_test, y_test, target_c)
-            ax.plot((np.array(range(11))) * 10, np.array(v[:11]) * -5000)
-            print('MM:', v[:100][-1] * -5000)
+            ax.plot((np.array(range(101))) * 10, np.array(v[:101]) * -5000)
+            print('MM:', v[:1000][-1] * -5000)
 
-            clf = DccpClassifier(tau=1, verbosity=0, tol=1e-10, dccp_max_iter=2, max_iter=10, mosek_max_iter=100,
-                                 get_info=True, reset_params_each_iter=False)
-            clf.fit(X_train, s_train)
+            # clf = DccpClassifier(tau=1, verbosity=0, tol=1e-10, dccp_max_iter=2, max_iter=10, mosek_max_iter=100,
+            #                      get_info=True, reset_params_each_iter=False)
+            # clf.fit(X_train, s_train)
+            #
+            # v = risk_function(clf, X_test, y_test, target_c)
+            # ax.plot((np.array(range(11))) * 10, np.array(v[:11]) * -5000)
+            # print('DCCP:', v[:100][-1] * -5000)
 
-            v = risk_function(clf, X_test, y_test, target_c)
-            ax.plot((np.array(range(11))) * 10, np.array(v[:11]) * -5000)
-            print('DCCP:', v[:100][-1] * -5000)
-
-            # ax.legend(['Joint', 'CCCP', 'MM'])
-            ax.legend(['Joint', 'CCCP', 'MM', 'DCCP'])
+            ax.legend(['Joint', 'CCCP', 'MM'])
+            # ax.legend(['Joint', 'CCCP', 'MM', 'DCCP'])
             ax.set_title(f'Model {i+1}, c: {target_c}')
 
     # for ax in axs.flat:
@@ -81,7 +82,8 @@ def draw_convergence_plot(risk_function, plot_title, filename):
         os.mkdir('standalone_plots')
 
     fig.suptitle(plot_title, fontsize=20)
-    plt.savefig(f'standalone_plots/{filename}', dpi=300)
+    plt.savefig(f'standalone_plots/{filename}.png', dpi=300, bbox_inches='tight')
+    plt.savefig(f'standalone_plots/{filename}.svg', bbox_inches='tight')
     plt.show()
 
 
