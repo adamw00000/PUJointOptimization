@@ -26,13 +26,13 @@ def my_log_loss(y_true, y_pred, *, eps=1e-15, sample_weight=None):
 
 
 def oracle_risk(b, X, y):
-    probability = sigma(np.matmul(X, b))
+    probability = sigma(X @ b)
     return my_log_loss(y, probability)
 
 
 def oracle_risk_derivative(b, X, y):
     n = X.shape[0]
-    sig = sigma(np.matmul(X, b))
+    sig = sigma(X @ b)
 
     multiplier = y - sig
     partial_res = np.sum(X * multiplier.reshape(-1, 1), axis=0)
@@ -63,7 +63,7 @@ def my_log_loss_for_weighted(y_true, y_pred, *, eps=1e-15, w_pos_pos, w_pos_neg,
 
 
 def weighted_risk(b, X, s, c):
-    probability = sigma(np.matmul(X, b))
+    probability = sigma(X @ b)
 
     # labeled_examples = np.where(s == 1)[0]
     # neg_weight_labeled_samples = s[labeled_examples]
@@ -88,7 +88,7 @@ def weighted_risk(b, X, s, c):
 def weighted_risk_derivative(b, X, s, c):
     n = X.shape[0]
 
-    sig = sigma(np.matmul(X, b))
+    sig = sigma(X @ b)
 
     multiplier = s / c - sig
     partial_res = np.sum(X * multiplier.reshape(-1, 1), axis=0)
@@ -105,8 +105,8 @@ def joint_risk(params, X, s, exact_c=None):
 
     # ### ORIGINAL R IMPLEMENTATION START
 
-    # term1 = c * sigma(np.matmul(X, b))
-    # term2 = 1 - c * sigma(np.matmul(X, b))
+    # term1 = c * sigma(X @ b)
+    # term2 = 1 - c * sigma(X @ b)
     #
     # term1 = np.where(term1 < 0, 0, term1)
     # term2 = np.where(term2 < 0, 0, term2)
@@ -117,7 +117,7 @@ def joint_risk(params, X, s, exact_c=None):
 
     # ### ORIGINAL R IMPLEMENTATION END
 
-    probability = c * sigma(np.matmul(X, b))
+    probability = c * sigma(X @ b)
     return my_log_loss(s, probability)
 
 
@@ -131,7 +131,7 @@ def joint_risk_derivative(params, X, s, exact_c=None):
         b = params
         c = exact_c
 
-    sig = sigma(np.matmul(X, b))
+    sig = sigma(X @ b)
 
     # ### ORIGINAL R IMPLEMENTATION START
 
@@ -170,7 +170,7 @@ def cc_joint_risk(params, X, s, P_s_1, exact_alpha=None):
         alpha = exact_alpha
 
     c = P_s_1 / (alpha * (1 - P_s_1) + P_s_1)
-    probability = c * sigma(np.matmul(X, b))
+    probability = c * sigma(X @ b)
     return my_log_loss(s, probability)
 
 
@@ -184,7 +184,7 @@ def cc_joint_risk_derivative(params, X, s, P_s_1, exact_alpha=None):
         b = params
         alpha = exact_alpha
 
-    sig = sigma(np.matmul(X, b))
+    sig = sigma(X @ b)
 
     c = P_s_1 / (alpha * (1 - P_s_1) + P_s_1)
     multiplier = (1 - sig) * (s - c * sig) / (c * (1 - c * sig))
@@ -215,7 +215,7 @@ def cccp_risk_wrt_b(b, X, s, c, b_prev):
     result += E_vex_part
     # print('Half CCCP risk value:', result)
 
-    xb = np.matmul(X, b_prev)
+    xb = X @ b_prev
 
     for j in range(len(b)):
         # v = (1 - s) * (1 - c) * X[:, j] * exb / (1 + (1 - c) * exb)
@@ -238,7 +238,7 @@ def cccp_risk_derivative_wrt_b(b, X, s, c, b_prev):
     E_vex_part = oracle_risk_derivative(b, X, s)
     result = E_vex_part
 
-    xb = np.matmul(X, b_prev)
+    xb = X @ b_prev
 
     for j in range(len(b)):
         # v = (1 - s) * (1 - c) * X[:, j] * exb / (1 + (1 - c) * exb)
@@ -255,7 +255,7 @@ def cccp_risk_derivative_wrt_b(b, X, s, c, b_prev):
 
 
 def cccp_risk_wrt_c(c, X, s, b):
-    probability = c * sigma(np.matmul(X, b))
+    probability = c * sigma(X @ b)
 
     return my_log_loss(s, probability)
 
@@ -263,6 +263,6 @@ def cccp_risk_wrt_c(c, X, s, b):
 def cccp_risk_derivative_wrt_c(c, X, s, b):
     n = X.shape[0]
 
-    sig = sigma(np.matmul(X, b))
+    sig = sigma(X @ b)
     derivative_wrt_c = np.sum(s / c + (s - 1) * sig / (1 - c * sig))
     return -derivative_wrt_c / n
