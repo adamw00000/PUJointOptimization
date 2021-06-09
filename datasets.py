@@ -134,7 +134,8 @@ def gen_probit_dataset(N, b, n_features=3, include_bias: bool = False):
     if include_bias:
         X = add_bias(X)
     probit_probas = scipy.stats.norm.cdf(np.matmul(X, b))
-    df['y'] = np.where(probit_probas > 0.5, 1, 0)
+    rand_res = np.random.random(N)
+    df['y'] = np.where(probit_probas > rand_res, 1, 0)
 
     X = df.iloc[:, :-1]
     y = df.iloc[:, -1]

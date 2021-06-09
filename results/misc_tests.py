@@ -162,23 +162,37 @@ import scipy.stats
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+from datasets import gen_probit_dataset
+
 sns.set_theme()
 plt.figure(figsize=(8, 6))
 
-l = np.linspace(-5, 5, 1000)
-plt.plot(l, scipy.stats.norm.cdf(l))
 
-p = np.linspace(-5, 5, 50)
-plt.scatter(p, np.where(p > 0, 1, 0), c='r')
+X, y = gen_probit_dataset(100, [0, 1], 1, True)
+max_x = max(np.abs(np.max(X.to_numpy())), np.abs(np.min(X.to_numpy())))
+
+l = np.linspace(-max_x, max_x, 1000)
+
+plt.plot(l, scipy.stats.norm.cdf(l))
+plt.scatter(X.to_numpy()[:, 0], y, c='r', s=15)
 
 plt.legend(['Rozkład probitowy', 'Pobrane próbki'])
 
 plt.ylabel('Prawdopodobieństwo przynależności do klasy dodatniej')
 plt.title('Dane dla modelu probitowego')
 plt.xlabel('X')
+plt.savefig(r'results\standalone_plots\probit_orig.png', bbox_inches='tight', dpi=300)
 plt.savefig(r'results\standalone_plots\probit_orig.svg', bbox_inches='tight')
 plt.show()
 plt.close()
+
+# %%
+from optimization import OracleClassifier
+
+clf = OracleClassifier(include_bias=True)
+clf.fit(X.to_numpy(), y.to_numpy())
+
+print(clf.params)
 
 # %%
 import numpy as np
@@ -190,17 +204,21 @@ from optimization.functions import accuracy, joint_risk, oracle_risk, sigma, add
 sns.set_theme()
 plt.figure(figsize=(8, 6))
 
-l = np.linspace(-5, 5, 1000)
-plt.plot(l, sigma(300*l))
+plt.plot(l, scipy.stats.norm.cdf(l), 'b--')
+plt.plot(l, sigma(l), 'g-.')
+plt.plot(l, sigma(clf.params[1]*l + clf.params[0]), 'g')
 
-p = np.linspace(-5, 5, 50)
-plt.scatter(p, np.where(p > 0, 1, 0), c='r')
+plt.scatter(X.to_numpy()[:, 0], y, c='r', s=15)
 
-plt.legend(['Dopasowany model logistyczny', 'Próbki z rozkładu probitowego'])
+plt.legend(['Oryginalny rozkład probitowy',
+            'Model logistyczny z probitowym wektorem parametrów',
+            'Dopasowany model logistyczny',
+            'Próbki z rozkładu probitowego'])
 
 plt.ylabel('Prawdopodobieństwo przynależności do klasy dodatniej')
-plt.title('Model probitowy - dopasowanie')
+plt.title('Model probitowy - dopasowanie klasyfikatora logistycznego')
 plt.xlabel('X')
+plt.savefig(r'results\standalone_plots\probit_best_fit.png', bbox_inches='tight', dpi=300)
 plt.savefig(r'results\standalone_plots\probit_best_fit.svg', bbox_inches='tight')
 plt.show()
 plt.close()

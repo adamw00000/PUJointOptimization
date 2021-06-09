@@ -26,7 +26,7 @@ metric_ylim = {
 metric_short_name = {
     'Błąd aproksymacji (AE) prawdopodobieństwa a posteriori': 'AE',
     r'Błąd estymacji częstości etykietowania': 'LFE',
-    r'Błąd estymacji prawdopodobieństwa a priori': 'PPE',
+    r'Błąd estymacji prawdopodobieństwa a priori': 'CPE',
     'AUC': 'AUC',
     'Czas wykonania': 'time',
     'Iteracje metody': 'it',
@@ -128,8 +128,8 @@ draw_order = [
     'Ward - TIcE',
     'Joint',
     'Simple split',
-    'DCCP',
     'MM',
     'CCCP',
+    'DCCP',
     'Oracle'
 ]
