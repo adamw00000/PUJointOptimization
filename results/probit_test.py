@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 import pandas as pd
+import scipy.stats
 
 from results.test_dicts import marker_styles
 from datasets import gen_probit_dataset
@@ -73,7 +74,7 @@ for target_c in cs:
                             # print('b:', joint_risk(b, X_train, s_train, c))
                             # print("est:", joint_risk(clf.params, X_train, s_train, c))
 
-                            real_probas = sigma(np.matmul(add_bias(X_train), b_bias))
+                            real_probas = scipy.stats.norm.cdf(np.matmul(add_bias(X_train), b_bias))
                             est_probas = sigma(np.matmul(add_bias(X_train), clf.params))
                             y_pred = np.where(est_probas >= 0.5, 1, 0)
 
@@ -99,7 +100,7 @@ for target_c in cs:
                             # print('b:', joint_risk(b, X_train, s_train, c))
                             # print("est:", joint_risk(clf.params, X_train, s_train, c))
 
-                            real_probas = sigma(np.matmul(add_bias(X_train), b_bias))
+                            real_probas = scipy.stats.norm.cdf(np.matmul(add_bias(X_train), b_bias))
                             est_probas = sigma(np.matmul(add_bias(X_train), clf.params))
                             y_pred = np.where(est_probas >= 0.5, 1, 0)
 
@@ -153,12 +154,12 @@ for target_c in cs:
 df = pd.DataFrame.from_records(results)
 
 # %%
-df.to_csv('probit_res.csv')
+df.to_csv('probit_res_with_bias.csv')
 
 # %%
 import pandas as pd
 
-df = pd.read_csv('probit_res.csv')
+df = pd.read_csv('probit_res_with_bias.csv')
 
 # %%
 import os
@@ -240,7 +241,7 @@ for i, target_c in enumerate(df.c.unique()):
 
         real_proba_ax.plot(plot_df.N, plot_df.RealProbaError, **marker_styles[method])
         real_proba_ax.set_xlabel('Rozmiar zbioru danych')
-        real_proba_ax.set_ylabel('Średni błąd estymacji prawdopodobieństwa')
+        real_proba_ax.set_ylabel('RAE')
         real_proba_ax.legend(list(methods))
         real_proba_ax.set_ylim(bottom=-0.01, top=0.15)
         # real_proba_ax.set_title(f'Probit - błąd estymacji rzeczywistego prawdopodobieństwa (c={target_c})')
@@ -281,8 +282,8 @@ for i, target_c in enumerate(df.c.unique()):
 for fig, name, suptitle in [
     (error_fig, 'ee', 'Probit - błąd estymacji parametrów'),
     (angle_fig, 'angle', 'Probit - kąt (w stopniach) pomiędzy rzeczywistym estymowanym a rzeczywistym wektorem parametrów'),
-    (real_proba_fig, 'real_proba', 'Probit - błąd aproksymacji rzeczywistego prawdopodobieństwa '),
-    (oracle_proba_fig, 'oracle_proba', 'Probit - błąd aproksymacji prawdopodobieństwa a posteriori'),
+    (real_proba_fig, 'real_proba', 'Probit - błąd aproksymacji rzeczywistego prawdopodobieństwa a posteriori'),
+    (oracle_proba_fig, 'oracle_proba', 'Probit - błąd aproksymacji prawdopodobieństwa a posteriori względem wyroczni'),
     # (accuracy_fig, 'accuracy', 'Probit - accuracy'),
     (auc_fig, 'auc', 'Probit - AUC'),
     (length_fig, 'length', 'Probit - stopień wydłużenia wektora parametrów'),

@@ -176,10 +176,10 @@ l = np.linspace(-max_x, max_x, 1000)
 plt.plot(l, scipy.stats.norm.cdf(l))
 plt.scatter(X.to_numpy()[:, 0], y, c='r', s=15)
 
-plt.legend(['Rozkład probitowy', 'Pobrane próbki'])
+plt.legend(['Model probitowy', 'Pobrane próbki'])
 
 plt.ylabel('Prawdopodobieństwo przynależności do klasy dodatniej')
-plt.title('Dane dla modelu probitowego')
+plt.title('Generowanie zbioru probitowego - przypadek jednowymiarowy')
 plt.xlabel('X')
 plt.savefig(r'results\standalone_plots\probit_orig.png', bbox_inches='tight', dpi=300)
 plt.savefig(r'results\standalone_plots\probit_orig.svg', bbox_inches='tight')
@@ -194,7 +194,6 @@ clf.fit(X.to_numpy(), y.to_numpy())
 
 print(clf.params)
 
-# %%
 import numpy as np
 import scipy.stats
 import matplotlib.pyplot as plt
@@ -210,10 +209,10 @@ plt.plot(l, sigma(clf.params[1]*l + clf.params[0]), 'g')
 
 plt.scatter(X.to_numpy()[:, 0], y, c='r', s=15)
 
-plt.legend(['Oryginalny rozkład probitowy',
-            'Model logistyczny z probitowym wektorem parametrów',
+plt.legend(['Oryginalny model probitowy',
+            'Model logistyczny z oryginalnym wektorem parametrów',
             'Dopasowany model logistyczny',
-            'Próbki z rozkładu probitowego'])
+            'Próbki z rozkładu probitowego'], bbox_to_anchor=(0.28, 0.08, 0.5, 0.2))
 
 plt.ylabel('Prawdopodobieństwo przynależności do klasy dodatniej')
 plt.title('Model probitowy - dopasowanie klasyfikatora logistycznego')
